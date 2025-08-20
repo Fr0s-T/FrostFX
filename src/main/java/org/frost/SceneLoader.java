@@ -67,7 +67,7 @@ public final class SceneLoader {
     }
 
     // ---- Card mount & refresh (generic) ----
-    public static void load(String cardName) {
+    public static void loadCard(String cardName) {
         ensurePanelCached();
         String path = cardPathsMap.get(cardName);
         if (path == null) throw new IllegalArgumentException("Unknown card: " + cardName);
@@ -80,7 +80,7 @@ public final class SceneLoader {
 
     public static void refreshPanel() {
         if (currentPanelView != null && !currentPanelView.isEmpty()) {
-            load(currentPanelView);
+            loadCard(currentPanelView);
         }
     }
 
