@@ -2,16 +2,20 @@ package org.frost;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public final class SceneLoader {
 
@@ -20,6 +24,9 @@ public final class SceneLoader {
     private static String currentPanelView = "";
     private static final Map<String, String> cardPathsMap = new HashMap<>();
     private static final Map<String, AnchorPane> cachedDynamicPanels = new HashMap<>();
+
+    // ---- Container Registry ----
+    private static final Map<String, Pane> containerRegistry = new HashMap<>();
 
     private SceneLoader() {}
 
@@ -39,10 +46,16 @@ public final class SceneLoader {
         cardPathsMap.put(name, fxmlPath);
     }
 
-    public static void registerDynamicPanels(String name, AnchorPane dynamicPane) {
+    public static void registerDynamicPanel(String name, AnchorPane dynamicPane) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Panel name must not be blank");
         if (dynamicPane == null) throw new IllegalArgumentException("Panel must not be null");
         cachedDynamicPanels.put(name, dynamicPane);
+    }
+
+    public static void registerContainer(String name, Pane container) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Container name must not be blank");
+        if (container == null) throw new IllegalArgumentException("Container must not be null");
+        containerRegistry.put(name, container);
     }
 
     // ---- Full-scene swap (rare) ----
@@ -69,7 +82,7 @@ public final class SceneLoader {
         });
     }
 
-    // ---- Card mount & refresh (generic) ----
+    // ---- Basic Card Loading (AnchorPane) ----
     public static void loadCard(String cardName, String anchorPaneName) {
         ensurePanelCached(anchorPaneName);
         String path = cardPathsMap.get(cardName);
@@ -79,6 +92,41 @@ public final class SceneLoader {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load card '" + cardName + "' from " + path, e);
         }
+    }
+
+    // ---- Advanced Card Loading (Generic) ----
+    public static <T> void loadCards(List<T> items, Pane container, String cardFxmlPath) {
+        loadCards(items, container, cardFxmlPath, null);
+    }
+
+    public static <T> void loadCards(List<T> items, Pane container, String cardFxmlPath,
+                                     BiConsumer<Object, T> dataSetter) {
+        runOnFxThread(() -> {
+            container.getChildren().clear();
+
+            for (T item : items) {
+                try {
+                    FXMLLoader loader = new FXMLLoader(SceneLoader.class.getResource(cardFxmlPath));
+                    Node card = loader.load();
+
+                    // Only call dataSetter if provided
+                    if (dataSetter != null) {
+                        dataSetter.accept(loader.getController(), item);
+                    }
+
+                    container.getChildren().add(card);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to load card: " + cardFxmlPath, e);
+                }
+            }
+        });
+    }
+
+    public static <T> void loadCardsInto(String containerName, List<T> items,
+                                         String cardFxmlPath, BiConsumer<Object, T> dataSetter) {
+        Pane container = containerRegistry.get(containerName);
+        if (container == null) throw new IllegalArgumentException("Container not registered: " + containerName);
+        loadCards(items, container, cardFxmlPath, dataSetter);
     }
 
     // ---- Internals ----
@@ -118,9 +166,16 @@ public final class SceneLoader {
         return cachedDynamicPanels.keySet();
     }
 
+    public static Set<String> getAvailableContainers() {
+        return containerRegistry.keySet();
+    }
+
     public static boolean isPanelInCurrentScene(String panelName) {
         AnchorPane panel = cachedDynamicPanels.get(panelName);
-        return panel != null && panel.getScene() == primaryStage.getScene();
+        if (panel == null || panel.getScene() == null || primaryStage == null) {
+            return false;
+        }
+        return panel.getScene() == primaryStage.getScene();
     }
 
     public static boolean isPanelInScene(String panelName) {
