@@ -11,10 +11,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public final class SceneLoader {
@@ -24,6 +21,7 @@ public final class SceneLoader {
     private static String currentPanelView = "";
     private static final Map<String, String> cardPathsMap = new HashMap<>();
     private static final Map<String, AnchorPane> cachedDynamicPanels = new HashMap<>();
+    private static final List<SceneLoaderListener> sceneListeners = new ArrayList<>();
 
     // ---- Container Registry ----
     private static final Map<String, Pane> containerRegistry = new HashMap<>();
@@ -37,6 +35,22 @@ public final class SceneLoader {
 
     public static String getCurrentPanelView() {
         return currentPanelView;
+    }
+
+    // ---- Lifecycle Hooks ----
+    public interface SceneLoaderListener {
+        void onBeforeSceneLoad(String fxmlPath);
+        void onAfterSceneLoad(String fxmlPath, Object controller);
+    }
+
+
+    // Add registration methods:
+    public static void addSceneLoaderListener(SceneLoaderListener listener) {
+        sceneListeners.add(listener);
+    }
+
+    public static void removeSceneLoaderListener(SceneLoaderListener listener) {
+        sceneListeners.remove(listener);
     }
 
     // ---- Registry (name -> FXML path) ----
@@ -64,7 +78,11 @@ public final class SceneLoader {
             if (primaryStage == null) {
                 throw new IllegalStateException("Primary stage not set. Call SceneLoader.setPrimaryStage(stage) first.");
             }
+
             try {
+                // BEFORE HOOK: Notify listeners scene is about to load
+                fireBeforeSceneLoad(fxmlPath);
+
                 URL url = SceneLoader.class.getResource(fxmlPath);
                 if (url == null) throw new IllegalArgumentException("FXML not found on classpath: " + fxmlPath);
 
@@ -72,10 +90,16 @@ public final class SceneLoader {
                 if (controller != null) loader.setController(controller);
                 Parent root = loader.load();
 
+                Object loadedController = loader.getController(); // Get the actual controller
+
                 Scene scene = new Scene(root);
                 primaryStage.setScene(scene);
                 primaryStage.centerOnScreen();
                 primaryStage.show();
+
+                // AFTER HOOK: Notify listeners scene finished loading
+                fireAfterSceneLoad(fxmlPath, loadedController);
+
             } catch (IOException e) {
                 throw new RuntimeException("Failed to load scene: " + fxmlPath, e);
             }
@@ -159,6 +183,18 @@ public final class SceneLoader {
             AnchorPane.setLeftAnchor(card, 0.0);
             currentPanelView = logicalName;
         });
+    }
+
+    private static void fireBeforeSceneLoad(String fxmlPath) {
+        for (SceneLoaderListener listener : sceneListeners) {
+            listener.onBeforeSceneLoad(fxmlPath);
+        }
+    }
+
+    private static void fireAfterSceneLoad(String fxmlPath, Object controller) {
+        for (SceneLoaderListener listener : sceneListeners) {
+            listener.onAfterSceneLoad(fxmlPath, controller);
+        }
     }
 
     // ---- Helper methods for debugging ----
