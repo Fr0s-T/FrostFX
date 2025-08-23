@@ -7,6 +7,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -22,8 +23,11 @@ import java.util.function.BiConsumer;
  * and lifecycle management automatically.
  * <p>
  * USAGE:
+ * <p>
  * 1. In Main.java: SceneLoader.setPrimaryStage(primaryStage);
+ * <p>
  * 2. Register components: registerCard(), registerDynamicPanel(), registerContainer()
+ * <p>
  * 3. Load content: loadScene(), loadCard(), loadCards()
  *
  * @author Frost
@@ -263,6 +267,67 @@ public final class SceneLoader {
     }
 
     /**
+     * Loads and displays a popup window from the given FXML file.
+     * <p>
+     * This method creates a new {@link Stage}, applies the configuration
+     * provided in {@link PopupConfig}, and shows the popup either with
+     * {@link Stage#show()} or {@link Stage#showAndWait()} depending on the
+     * configuration.
+     * </p>
+     *
+     * <p>
+     * If the controller of the FXML implements {@link PopupController}, the
+     * popup {@link Stage} is automatically injected via
+     * {@link PopupController#setDialogStage(Stage)}.
+     * </p>
+     *
+     * @param fxmlPath path to the FXML resource (must not be null or blank)
+     * @param config   popup configuration object
+     * @param <T>      type of the controller associated with the FXML
+     * @throws IllegalArgumentException if {@code fxmlPath} is null or blank
+     * @throws RuntimeException         if the FXML could not be loaded
+     */
+
+    public static <T> void loadPopupWindow(String fxmlPath, PopupConfig config) {
+        if (fxmlPath == null || fxmlPath.isBlank())
+            throw new IllegalArgumentException("FXML file path can’t be empty or blank");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(SceneLoader.class.getResource(fxmlPath));
+            AnchorPane page = loader.load();
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle(config.getTitle());
+            dialogStage.setResizable(config.isResizable());
+            if (config.isModal()) {
+                dialogStage.initModality(Modality.APPLICATION_MODAL);
+            }
+
+            if (config.getIcon() != null) {
+                dialogStage.getIcons().add(config.getIcon());
+            }
+
+            Scene scene = new Scene(page, config.getWidth(), config.getHeight());
+            dialogStage.setScene(scene);
+
+            // Controller
+            T controller = loader.getController();
+            if (controller instanceof PopupController) {
+                ((PopupController) controller).setDialogStage(dialogStage);
+            }
+
+            if (config.isWaitForClose()) {
+                dialogStage.showAndWait();
+            } else {
+                dialogStage.show();
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to render popup window from " + fxmlPath, e);
+        }
+    }
+
+    /**
      * Loads cards into a registered container by name
      * Convenience method for registered containers
      *
@@ -368,4 +433,5 @@ public final class SceneLoader {
         if (Platform.isFxApplicationThread()) action.run();
         else Platform.runLater(action);
     }
+
 }
