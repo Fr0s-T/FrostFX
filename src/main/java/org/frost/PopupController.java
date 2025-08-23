@@ -9,6 +9,7 @@ import javafx.stage.Stage;
  * When a controller implements this interface, the {@link Stage}
  * is automatically injected by {@code SceneLoader.loadPopupWindow}.
  * </p>
+ * @author Frost
  */
 
 public interface PopupController {

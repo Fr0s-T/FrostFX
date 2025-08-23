@@ -9,6 +9,7 @@ import javafx.scene.image.Image;
  * such as title, modality, size, icon, and whether it blocks
  * until closed.
  * </p>
+ * @author Frost
  */
 
 public class PopupConfig {
