@@ -35,14 +35,14 @@ public final class SceneManager {
 
     private static WindowMode windowMode = null;
     private static final StageManager stateManager = new StageManager();
-    private static final SceneLoader frameLoader = new SceneLoader();
+    private static final SceneLoader sceneLoader = new SceneLoader();
     private static final CardLoader cardLoader = new CardLoader();
     private static final PopupLoader popupLoader = new PopupLoader();
     private static final AlertUtilities alertUtilities = new AlertUtilities();
 
     public static void innit(Stage primaryStage){
         stateManager.setPrimaryStage(primaryStage);
-        frameLoader.setPrimaryStage(primaryStage);
+        sceneLoader.setPrimaryStage(primaryStage);
         cardLoader.setPrimaryStage(primaryStage);
     }
 
@@ -50,7 +50,7 @@ public final class SceneManager {
 
 
     public static StageManager StageManager(){return stateManager;}
-    public static SceneLoader FrameLoader(){return frameLoader;}
+    public static SceneLoader SceneLoader(){return sceneLoader;}
     public static CardLoader CardLoader() {
         return cardLoader;
     }
