@@ -11,7 +11,6 @@ import javafx.stage.Stage;
  * </p>
  * @author Frost
  */
-
 public interface PopupController {
     void setDialogStage(Stage stage);
 }

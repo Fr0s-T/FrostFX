@@ -2,6 +2,8 @@ package org.frost.helpers;
 
 import javafx.scene.image.Image;
 
+import java.util.function.Consumer;
+
 /**
  * Configuration object for popup windows.
  * <p>
@@ -20,6 +22,7 @@ public class PopupConfig {
     private double width = 400;
     private double height = 300;
     private Image icon;
+    private Consumer<Object> controllerConfigurator;
 
     // Fluent setters
     public PopupConfig setTitle(String title) {
@@ -53,6 +56,15 @@ public class PopupConfig {
         return this;
     }
 
+    /**
+     * Gets the controller configurator function
+     *
+     * @return the controller configurator, or null if not set
+     */
+    public Consumer<Object> getControllerConfigurator() {
+        return controllerConfigurator;
+    }
+
     // Getters...
     public String getTitle() { return title; }
     public boolean isResizable() { return resizable; }
@@ -61,4 +73,16 @@ public class PopupConfig {
     public double getWidth() { return width; }
     public double getHeight() { return height; }
     public Image getIcon() { return icon; }
+
+    /**
+     * Sets a configurator function that will be called with the controller instance
+     * after the popup is loaded but before it is shown.
+     *
+     * @param configurator a Consumer that accepts the controller for configuration
+     * @return this PopupConfig instance for fluent chaining
+     */
+    public PopupConfig setControllerConfigurator(Consumer<Object> configurator) {
+        this.controllerConfigurator = configurator;
+        return this;
+    }
 }

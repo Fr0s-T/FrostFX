@@ -23,6 +23,7 @@ public class SceneLoader {
     /** List of scene lifecycle listeners for hooks */
     private static final List<FrameLoaderListener> sceneListeners = new ArrayList<>();
 
+
     public interface FrameLoaderListener {
         /** Called immediately before a scene begins loading */
         void onBeforeSceneLoad(String fxmlPath);
@@ -274,5 +275,31 @@ public class SceneLoader {
         for (FrameLoaderListener listener : sceneListeners) {
             listener.onAfterSceneLoad(fxmlPath, controller);
         }
+    }
+
+    /**
+     * Clears stage references from the SceneLoader
+     * Currently only clears the primary stage reference
+     * Method exists for future expansion and API consistency
+     */
+    public void clearStageReferences() {
+        primaryStage = null;
+    }
+
+    /**
+     * Clears references for a specific stage
+     *
+     * @param stage The stage to clear references for
+     */
+    public void clearReferencesForStage(Stage stage) {
+        if (stage != null && primaryStage == stage) {
+            primaryStage = null;
+        }
+    }
+    /**
+     * Clears all registered scene lifecycle listeners
+     */
+    public void clearAllListeners(){
+        sceneListeners.clear();
     }
 }
