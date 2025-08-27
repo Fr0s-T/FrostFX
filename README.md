@@ -3,9 +3,10 @@
 Tame JavaFX complexity with professional-grade scene management.  
 A lightweight, thread-safe framework for managing scenes, components, and windows in JavaFX applications.
 
-![JavaFX](https://img.shields.io/badge/JavaFX-Architecture%2520Ready-blue?logo=java&logoColor=white)
-![Thread-Safe](https://img.shields.io/badge/Thread-Safe%2520%E2%9C%85-green)
+![JavaFX](https://img.shields.io/badge/JavaFX-Architecture%20Ready-blue?logo=java&logoColor=white)
+![Thread-Safe](https://img.shields.io/badge/Thread-Safe%20%E2%9C%85-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
+
 
 ---
 
@@ -214,7 +215,7 @@ P.P.S. Yes, it actually handles multi-threaded UI updates properly — something
 
 ## 📜 License
 
-MIT License © 2025 Fr0s-T – See LICENSE
+MIT License © 2025 Fr0s-T – See [LICENSE](https://github.com/Fr0s-T/JavaFXSceneManager/blob/master/LICENSE)
 
 for details.
 Attribution required – Please include copyright.
