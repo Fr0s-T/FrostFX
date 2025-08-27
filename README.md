@@ -7,6 +7,7 @@ A lightweight, thread-safe framework for managing scenes, components, and window
 ![Thread-Safe](https://img.shields.io/badge/Thread-Safe%20%E2%9C%85-green)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
 
+
 ---
 
 ## 🚀 Why This Exists
@@ -214,7 +215,7 @@ P.P.S. Yes, it actually handles multi-threaded UI updates properly — something
 
 ## 📜 License
 
-MIT License © 2025 Fr0s-T – See LICENSE
+MIT License © 2025 Fr0s-T – See [LICENSE](https://github.com/Fr0s-T/JavaFXSceneManager/blob/master/LICENSE)
 
 for details.
 Attribution required – Please include copyright.
