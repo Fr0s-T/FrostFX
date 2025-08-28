@@ -227,11 +227,14 @@ public class StageManager {
         }
 
         applyWindowModeInternal(stage, mode);
-        stageWindowModes.put(stage, mode);
 
-        if (stage == primaryStage) {
-            currentWindowMode = mode;
-        }
+        // Update StageManager state
+        stageWindowModes.put(stage, mode);
+        if (stage == primaryStage) currentWindowMode = mode;
+
+        // Update internal tracking
+        stageWindowModes.put(stage, mode);
+        if (stage == primaryStage) currentWindowMode = mode;
     }
 
     /**
@@ -281,32 +284,51 @@ public class StageManager {
     }
 
     /**
-     * Internal method to apply window mode configuration
+     * Applies the specified window mode to a stage.
+     * Must be called after stage initialization and before stage.show().
+     * <p>
+     * Notes:
+     * - JavaFX requires stage.initStyle() before showing the stage.
+     * - Fullscreen with decorations is platform-dependent; some OSes hide the chrome anyway.
+     * - Developers should expect a "best-effort" result for FULLSCREEN_DECORATED.
      */
     private void applyWindowModeInternal(Stage stage, WindowMode mode) {
-        // ACTUAL IMPLEMENTATION NEEDED:
+
         switch (mode) {
             case DECORATED:
-                stage.setFullScreen(false);
+                // Standard window with OS chrome
                 stage.initStyle(StageStyle.DECORATED);
-                break;
-            case UNDECORATED:
                 stage.setFullScreen(false);
-                stage.initStyle(StageStyle.UNDECORATED);
+                stage.setMaximized(false);
                 break;
-            case FULLSCREEN_DECORATED:
-                stage.setFullScreen(true);
-                stage.setFullScreenExitHint("");
-                stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-                break;
-            case FULLSCREEN_UNDECORATED:
-                stage.setFullScreen(true);
+
+            case UNDECORATED:
+                // Window without decorations
                 stage.initStyle(StageStyle.UNDECORATED);
-                stage.setFullScreenExitHint("");
-                stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+                stage.setFullScreen(false);
+                stage.setMaximized(false);
+                break;
+
+            case MAXIMIZED:
+                // Windowed fullscreen with OS bars visible
+                stage.initStyle(StageStyle.DECORATED);
+                stage.setFullScreen(false);
+                stage.setMaximized(true);
+                break;
+
+            case FULLSCREEN:
+                // True fullscreen (OS bars hidden)
+                stage.initStyle(StageStyle.UNDECORATED);
+                stage.setMaximized(false); // irrelevant in fullscreen
+                stage.setFullScreen(true);
+                stage.setFullScreenExitHint(""); // hide exit hint
+                stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH); // disable exit key
                 break;
         }
+
+
     }
+
 
     // ==================== DEBUGGING TOOLS ====================
 

@@ -36,17 +36,10 @@ public final class SceneManager {
      * Window display mode enum - controls window styling and behavior
      */
     public enum WindowMode {
-        /** Standard window with title bar and OS decoration */
-        DECORATED,
-
-        /** Borderless window without OS decoration */
-        UNDECORATED,
-
-        /** Fullscreen mode with visible control/notification bar */
-        FULLSCREEN_DECORATED,
-
-        /** True borderless fullscreen without any OS UI elements */
-        FULLSCREEN_UNDECORATED
+        DECORATED,        // Standard windowed
+        UNDECORATED,      // Windowed without decorations
+        MAXIMIZED,        // Windowed fullscreen (taskbar visible)
+        FULLSCREEN        // True fullscreen (OS bars hidden)
     }
 
     private static WindowMode windowMode = WindowMode.DECORATED;
