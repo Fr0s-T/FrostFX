@@ -26,7 +26,9 @@ import static org.frost.internal.loaders.SceneManager.runOnFxThread;
  * <ol>
  *   <li>Register cards: {@code registerCard("cardName", "/path/to/card.fxml")}</li>
  *   <li>Register panels: {@code registerDynamicPanel("panelName", anchorPane, stage)}</li>
+ *   <li>Register containers: {@code registerContainer("containerName", pane, stage)}</li>
  *   <li>Load cards: {@code loadCard("cardName", "panelName", stage)}</li>
+ *   <li>Load multiple cards: {@code loadCards("containerName", items, "cardFxmlPath", dataSetter, stage)}</li>
  * </ol>
  *
  * <p><b>Usage Examples:</b></p>
@@ -37,7 +39,7 @@ import static org.frost.internal.loaders.SceneManager.runOnFxThread;
  * ctrl.setUserData(user);
  *
  * // Bulk card loading
- * SceneManager.CardLoader().loadCardsInto("userList", users,
+ * SceneManager.CardLoader().loadCards("userList", users,
  *     "/cards/user.fxml", (controller, user) -> {
  *         ((UserController)controller).setUser(user);
  *     });
@@ -239,7 +241,7 @@ public class CardLoader {
         return containers != null && containers.remove(name) != null;
     }
 
-    // ==================== CARD LOADING METHODS ====================
+    // ==================== SINGLE CARD LOADING METHODS ====================
 
     /**
      * Loads a single card into a registered dynamic panel on the primary stage
@@ -286,52 +288,57 @@ public class CardLoader {
         }
     }
 
+    // ==================== MULTIPLE CARDS LOADING METHODS ====================
+
     /**
-     * Loads multiple cards into a container (simple version)
+     * Loads multiple cards into a registered container (simple version)
      *
-     * @param items List of data items (one card per item)
-     * @param container The Pane to populate with cards
+     * @param containerName Registered container name
+     * @param items List of data items
      * @param cardFxmlPath Path to card FXML template
      * @param <T> Type of data items
+     * @throws IllegalArgumentException if container not registered
      */
-    public <T> void loadCards(List<T> items, Pane container, String cardFxmlPath) {
-        loadCards(items, container, cardFxmlPath, null);
+    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath) {
+        ensurePrimaryStageSet();
+        loadCards(containerName, items, cardFxmlPath, null, primaryStage);
     }
 
     /**
-     * Loads multiple cards with data injection (advanced version)
+     * Loads multiple cards into a registered container with data injection
      *
+     * @param containerName Registered container name
      * @param items List of data items
-     * @param container The Pane to populate
      * @param cardFxmlPath Path to card FXML template
-     * @param dataSetter BiConsumer that injects data into each card's controller
+     * @param dataSetter BiConsumer for data injection
      * @param <T> Type of data items
-     * @throws IllegalArgumentException if FXML path is invalid
+     * @throws IllegalArgumentException if container not registered
      */
-    public <T> void loadCards(List<T> items, Pane container, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
                               BiConsumer<Object, T> dataSetter) {
-        if (container == null) {
-            throw new IllegalArgumentException("Container cannot be null");
-        }
-        if (cardFxmlPath == null || cardFxmlPath.isBlank()) {
-            throw new IllegalArgumentException("Card FXML path cannot be null or blank");
+        ensurePrimaryStageSet();
+        loadCards(containerName, items, cardFxmlPath, dataSetter, primaryStage);
+    }
+
+    /**
+     * Loads multiple cards into a registered container on a specific stage
+     *
+     * @param containerName Registered container name
+     * @param items List of data items
+     * @param cardFxmlPath Path to card FXML template
+     * @param dataSetter BiConsumer for data injection
+     * @param stage The target stage
+     * @param <T> Type of data items
+     * @throws IllegalArgumentException if container not registered
+     */
+    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+                              BiConsumer<Object, T> dataSetter, Stage stage) {
+        if (stage == null) {
+            throw new IllegalArgumentException("Stage cannot be null");
         }
 
-        runOnFxThread(() -> {
-            container.getChildren().clear();
-            for (T item : items) {
-                try {
-                    FXMLLoader loader = new FXMLLoader(SceneManager.class.getResource(cardFxmlPath));
-                    Node card = loader.load();
-                    if (dataSetter != null) {
-                        dataSetter.accept(loader.getController(), item);
-                    }
-                    container.getChildren().add(card);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to load card from: " + cardFxmlPath, e);
-                }
-            }
-        });
+        Pane container = getContainer(containerName, stage);
+        loadCardsInternal(items, container, cardFxmlPath, dataSetter);
     }
 
     /**
@@ -366,12 +373,8 @@ public class CardLoader {
             throw new IllegalArgumentException("Stage cannot be null");
         }
 
-        Pane container = stageContainers.getOrDefault(stage, Collections.emptyMap()).get(containerName);
-        if (container == null) {
-            throw new IllegalArgumentException("Container '" + containerName + "' is not registered for this stage. "
-                    + "Call registerContainer('" + containerName + "', containerPane, stage) first.");
-        }
-        loadCards(items, container, cardFxmlPath, dataSetter);
+        Pane container = getContainer(containerName, stage);
+        loadCardsInternal(items, container, cardFxmlPath, dataSetter);
     }
 
     // ==================== INTERNAL HELPERS ====================
@@ -451,6 +454,52 @@ public class CardLoader {
         }
     }
 
+    /**
+     * Gets a container by name from a specific stage
+     *
+     * @param containerName Registered container name
+     * @param stage The target stage
+     * @return The container Pane
+     * @throws IllegalArgumentException if container not found
+     */
+    private Pane getContainer(String containerName, Stage stage) {
+        Pane container = stageContainers.getOrDefault(stage, Collections.emptyMap()).get(containerName);
+        if (container == null) {
+            throw new IllegalArgumentException("Container '" + containerName + "' is not registered for stage '"
+                    + stage.getTitle() + "'. Call registerContainer('" + containerName + "', containerPane, stage) first.");
+        }
+        return container;
+    }
+
+    /**
+     * Internal implementation for card loading (keeps the actual logic)
+     */
+    private <T> void loadCardsInternal(List<T> items, Pane container, String cardFxmlPath,
+                                       BiConsumer<Object, T> dataSetter) {
+        if (container == null) {
+            throw new IllegalArgumentException("Container cannot be null");
+        }
+        if (cardFxmlPath == null || cardFxmlPath.isBlank()) {
+            throw new IllegalArgumentException("Card FXML path cannot be null or blank");
+        }
+
+        runOnFxThread(() -> {
+            container.getChildren().clear();
+            for (T item : items) {
+                try {
+                    FXMLLoader loader = new FXMLLoader(SceneManager.class.getResource(cardFxmlPath));
+                    Node card = loader.load();
+                    if (dataSetter != null) {
+                        dataSetter.accept(loader.getController(), item);
+                    }
+                    container.getChildren().add(card);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to load card from: " + cardFxmlPath, e);
+                }
+            }
+        });
+    }
+
     // ==================== STATE CHECKS ====================
 
     /**
@@ -465,22 +514,33 @@ public class CardLoader {
     }
 
     /**
-     * Checks if a panel is in a specific stage's scene
+     * DEBUG HELPER: Checks if a panel exists and is attached to a scene in the given stage
+     * Returns false instead of throwing for null inputs to facilitate debugging
      *
-     * @param panelName Panel name to check
-     * @param stage Stage to check
-     * @return true if panel is in scene, false otherwise
+     * @param panelName Name of the panel to check
+     * @param stage Stage to search in (can be null for safe debugging)
+     * @return true if panel exists and is in a scene, false otherwise (including null inputs)
      */
     public boolean isPanelInScene(String panelName, Stage stage) {
-        if (stage == null) {
-            throw new IllegalArgumentException("Stage cannot be null");
+        // Safe debugging - return false instead of throwing
+        if (stage == null || panelName == null) {
+            System.out.println("[DEBUG] isPanelInScene: Null input - stage: " +
+                    (stage == null) + ", panelName: " + (panelName == null));
+            return false;
         }
 
         Map<String, AnchorPane> panels = stagePanels.get(stage);
-        if (panels == null) return false;
+        if (panels == null) {
+            System.out.println("[DEBUG] isPanelInScene: No panels registered for stage: " + stage);
+            return false;
+        }
 
         AnchorPane panel = panels.get(panelName);
-        return panel != null && panel.getScene() != null;
+        boolean result = panel != null && panel.getScene() != null;
+
+        System.out.println("[DEBUG] isPanelInScene: panel='" + panelName +
+                "', stage=" + stage + ", result=" + result);
+        return result;
     }
 
     // ==================== DEBUGGING TOOLS ====================
@@ -540,7 +600,7 @@ public class CardLoader {
      */
     public void clearAll() {
         clearAllRegistrations();   // Clear stage-specific stuff
-        cardPathsMap.clear();      // ✅ Now clear cards too (for complete reset)
+        cardPathsMap.clear();      // Clear cards too (for complete reset)
     }
 
     /**

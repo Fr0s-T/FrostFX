@@ -60,6 +60,48 @@ public class StageManager {
     }
 
     /**
+     * Checks if the primary stage has been initialized and is available for use.
+     * <p>
+     * This method provides a safe way to check stage initialization status without
+     * triggering IllegalStateException like {@link #getPrimaryStage()} would.
+     * </p>
+     *
+     * <p><b>Usage:</b></p>
+     * <pre>
+     * // Safe initialization check
+     * if (stageManager.isPrimaryStageSet()) {
+     *     // Stage is ready for operations
+     *     stageManager.getPrimaryStage().setTitle("App Ready");
+     * } else {
+     *     // Handle uninitialized state
+     *     logger.warn("Primary stage not yet initialized");
+     * }
+     * </pre>
+     *
+     * <p><b>Common use cases:</b></p>
+     * <ul>
+     *   <li>Pre-operation validation before accessing the primary stage</li>
+     *   <li>Conditional logic based on stage initialization status</li>
+     *   <li>Debugging and logging stage lifecycle events</li>
+     *   <li>Preventing IllegalStateException in initialization sequences</li>
+     * </ul>
+     *
+     * @return {@code true} if the primary stage has been set via {@link #setPrimaryStage(Stage)},
+     *         {@code false} if the stage is null or uninitialized
+     *
+     * @see #setPrimaryStage(Stage)
+     * @see #getPrimaryStage()
+     *
+     * @apiNote This method is thread-safe for read operations but should be used
+     *          in conjunction with proper initialization sequencing
+     *
+     * @since 2.0
+     */
+    public boolean isPrimaryStageSet() {
+        return primaryStage != null;
+    }
+
+    /**
      * Creates a new StageManager instance
      */
     public StageManager() {}

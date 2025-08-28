@@ -7,24 +7,6 @@ import org.frost.Utilities.ResetOptions;
 import org.frost.helpers.StageManager;
 
 
-/**
- * SCENELOADER - Professional JavaFX Scene and Component Management
- * <p>
- * A lightweight, thread-safe utility for managing JavaFX scene navigation,
- * dynamic card loading, and UI composition. Handles FXML loading, threading,
- * and lifecycle management automatically.
- * <p>
- * USAGE:
- * <p>
- * 1. In Main.java: SceneLoader.setPrimaryStage(primaryStage);
- * <p>
- * 2. Register components: registerCard(), registerDynamicPanel(), registerContainer()
- * <p>
- * 3. Load content: loadScene(), loadCard(), loadCards()
- *
- * @author Frost
- * @version 1.0
- */
 
 /**
  * SCENEMANAGER - Central coordinator for JavaFX UI management framework
@@ -79,7 +61,7 @@ public final class SceneManager {
             throw new IllegalArgumentException("Primary stage cannot be null");
         }
 
-        if (stageManager.getPrimaryStage() != null) { // 🛡️ NEW PROTECTION
+        if (stageManager.isPrimaryStageSet()) { // 🛡 NEW PROTECTION
             throw new IllegalStateException("Primary stage already initialized. "
                     + "Call SceneManager.reset() first if you need to change stages.");
         }
@@ -120,7 +102,7 @@ public final class SceneManager {
         }
 
         if (options.shouldClearPrimaryStage()) {
-            stageManager.setPrimaryStage(null);
+            stageManager.setPrimaryStage(new Stage());
             sceneLoader.clearStageReferences();
         }
 

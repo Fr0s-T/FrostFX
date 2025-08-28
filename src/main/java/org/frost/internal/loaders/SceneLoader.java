@@ -69,9 +69,8 @@ public class SceneLoader {
      */
     public void loadScene(String fxmlPath, Object controller, Stage stage) {
         runOnFxThread(() -> {
-            if (stage == null) {
-                throw new IllegalStateException("Stage cannot be null.");
-            }
+            if (stage == null) throw new IllegalStateException("Stage cannot be null");
+            if (fxmlPath == null || fxmlPath.isBlank()) throw new IllegalArgumentException("Invalid FXML path");
 
             try {
                 fireBeforeSceneLoad(fxmlPath);
@@ -235,6 +234,8 @@ public class SceneLoader {
 
     // Private helper method to apply window mode to a stage
     private void applyWindowModeToStage(Stage stage, WindowMode windowMode) {
+        if (stage == null) throw new IllegalArgumentException("Stage cannot be null");
+        if (windowMode == null) throw new IllegalArgumentException("WindowMode cannot be null");
         switch (windowMode) {
             case DECORATED:
                 stage.setFullScreen(false);
