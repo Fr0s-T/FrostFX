@@ -3,17 +3,15 @@ package org.frost.internal.loaders;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 import java.io.IOException;
+import java.lang.annotation.Documented;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.frost.internal.loaders.SceneManager.WindowMode;
 import static org.frost.internal.loaders.SceneManager.runOnFxThread;
 
 public class SceneLoader {
@@ -42,6 +40,7 @@ public class SceneLoader {
      *
      * @param listener Implementation of FrameLoaderListener
      */
+
     public void addSceneLoaderListener(FrameLoaderListener listener) {
         sceneListeners.add(listener);
     }
@@ -66,6 +65,7 @@ public class SceneLoader {
      * @param fxmlPath   Classpath path to the scene FXML
      * @param controller Optional custom controller (null for FXML-defined)
      * @param stage      The stage to load the scene into
+     * @throws RuntimeException throws RTE if the fxml class fails to load
      */
     public void loadScene(String fxmlPath, Object controller, Stage stage) {
         runOnFxThread(() -> {
@@ -92,7 +92,12 @@ public class SceneLoader {
                 fireAfterSceneLoad(fxmlPath, loadedController);
 
             } catch (IOException e) {
-                throw new RuntimeException("Failed to load scene: " + fxmlPath, e);
+                throw new RuntimeException("FXML Parsing Error: Failed to load '" + fxmlPath + "'. " +
+                        "This is typically caused by:\n" +
+                        "1. Invalid FXML syntax\n" +
+                        "2. A missing or invalid controller class\n" +
+                        "3. An invalid resource path inside the FXML file",
+                        e);
             }
         });
     }
@@ -104,9 +109,26 @@ public class SceneLoader {
      *
      * @param fxmlPath   Classpath path to the scene FXML
      * @param controller Optional custom controller (null for FXML-defined)
-     * @param stage      The stage to load the scene into
      * @param <T>        The type of the controller
      * @return a CompletableFuture that will hold the controller once loading is complete
+     * @throws RuntimeException throws RTE if the fxml class fails to load
+     */
+    public <T> CompletableFuture<T> loadSceneAsync(String fxmlPath, Object controller) {
+        ensurePrimaryStageSet();
+        return loadSceneAsync(fxmlPath, controller, primaryStage);
+    }
+
+    /**
+     * Loads a complete scene into a stage and returns a Future for its controller.
+     * Use when you need a reference to the controller after loading.
+     * The future completes on the JavaFX Application Thread.
+     *
+     * @param fxmlPath   Classpath path to the scene FXML
+     * @param controller Optional custom controller (null for FXML-defined)
+     * @param stage      The stage to load the scene into
+     * @param <T>        The type of the controller
+     * @return a CompletableFuture that, if completed exceptionally, will contain an Exception
+     * *         indicating the reason for failure (e.g., FXML not found, parsing error, etc.)
      */
     public <T> CompletableFuture<T> loadSceneAsync(String fxmlPath, Object controller, Stage stage) {
         CompletableFuture<T> future = new CompletableFuture<>();
@@ -125,6 +147,7 @@ public class SceneLoader {
                 if (controller != null) loader.setController(controller);
                 Parent root = loader.load();
 
+                @SuppressWarnings("unchecked")
                 T loadedController = (T) loader.getController();
 
                 Scene scene = new Scene(root);
@@ -183,5 +206,12 @@ public class SceneLoader {
      */
     public void clearAllListeners(){
         sceneListeners.clear();
+    }
+
+    private void ensurePrimaryStageSet() {
+        if (primaryStage == null) {
+            throw new IllegalStateException("Primary stage has not been set. "
+                    + "Call SceneManager.init(primaryStage) first.");
+        }
     }
 }

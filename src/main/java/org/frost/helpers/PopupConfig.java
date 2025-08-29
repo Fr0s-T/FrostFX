@@ -60,6 +60,7 @@ public class PopupConfig {
      * Gets the controller configurator function
      *
      * @return the controller configurator, or null if not set
+     * @since V1.0.0
      */
     public Consumer<Object> getControllerConfigurator() {
         return controllerConfigurator;

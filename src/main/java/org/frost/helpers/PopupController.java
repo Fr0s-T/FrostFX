@@ -10,6 +10,7 @@ import javafx.stage.Stage;
  * is automatically injected by {@code SceneLoader.loadPopupWindow}.
  * </p>
  * @author Frost
+ * @since V1.0.0
  */
 public interface PopupController {
     void setDialogStage(Stage stage);
