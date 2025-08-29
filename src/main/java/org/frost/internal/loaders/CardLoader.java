@@ -167,6 +167,20 @@ public class CardLoader {
                 primaryStage, 0, 0);
     }
 
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+                                                   BiConsumer<C, T> dataSetter ,double margin) {
+        ensurePrimaryStageSet();
+        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+                primaryStage, margin, margin);
+    }
+
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+                                                   BiConsumer<C, T> dataSetter, double horizontalMargin, double verticalMargin) {
+        ensurePrimaryStageSet();
+        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+                primaryStage, horizontalMargin, verticalMargin);
+    }
+
     // Master method with controller return
     public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
                                                    BiConsumer<C, T> dataSetter, Stage stage,
