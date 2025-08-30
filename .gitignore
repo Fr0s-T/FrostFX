@@ -16,6 +16,8 @@ src/main/java/org/frost/test/*
 src/main/resources/test/*
 out/*
 
+pom.xml
+
 ### Eclipse ###
 .apt_generated
 .classpath

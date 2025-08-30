@@ -46,7 +46,7 @@ public class CardLoader {
      */
     void setPrimaryStage(Stage stage) { this.primaryStage = stage; }
 
-    // ==================== GETTERS & QUERY METHODS ====================
+    // ==================== GETTERS & QUERY METHODS ====================//
 
     /**
      * Returns the name of the currently active panel view.
@@ -100,7 +100,7 @@ public class CardLoader {
         return stageContainers.getOrDefault(stage, Collections.emptyMap()).keySet();
     }
 
-    // ==================== REGISTRY METHODS ====================
+    // ==================== REGISTRY METHODS ====================//
 
     /**
      * Registers a card definition with the loader.
@@ -201,16 +201,17 @@ public class CardLoader {
         return containers != null && containers.remove(name) != null;
     }
 
-    // ==================== SINGLE CARD LOADING METHODS ====================
+    // ==================== SINGLE CARD LOADING METHODS ====================//
 
     /**
      * Loads a single card into a specified panel within the primary stage.
      *
      * @param <T> the type of the card's controller
-     * @param cardName the name of the registered card to load
+     * @param cardName the registered name of the card to load
      * @param anchorPaneName the name of the panel where the card should be placed
      * @return the controller instance of the loaded card
      * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
      */
     public <T> T loadCard(String cardName, String anchorPaneName) {
         ensurePrimaryStageSet();
@@ -221,28 +222,34 @@ public class CardLoader {
      * Loads a single card into a specified panel within a specific stage.
      *
      * @param <T> the type of the card's controller
-     * @param cardName the name of the registered card to load
+     * @param cardName the registered name of the card to load
      * @param anchorPaneName the name of the panel where the card should be placed
      * @param stage the stage containing the target panel
      * @return the controller instance of the loaded card
+     * @throws IllegalArgumentException if the card is not registered
      */
     public <T> T loadCard(String cardName, String anchorPaneName, Stage stage) {
-        return loadingService.loadCard(cardName, anchorPaneName, stage, cardPathsMap, stagePanels);
+        String cardFxmlPath = getCardPath(cardName);
+        AnchorPane targetPanel = getPanelFromRegistry(anchorPaneName, stage);
+        return loadingService.loadCard(targetPanel, cardFxmlPath, cardName, stage);
     }
 
-    // ==================== MULTIPLE CARDS LOADING METHODS ====================
+// ==================== MULTIPLE CARDS LOADING METHODS ====================//
 
     /**
      * Loads multiple cards into a container using the primary stage with no margins.
      * This is a convenience method for simple loading without data injection.
      *
+     * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
      */
-    public void loadCards(String containerName, List<?> items, String cardFxmlPath) {
+    public <T> void loadCards(String containerName, List<T> items, String cardName) {
         ensurePrimaryStageSet();
-        loadCards(containerName, items, cardFxmlPath, null, primaryStage, 0, 0);
+        loadCards(containerName, items, cardName, null, primaryStage, 0, 0);
     }
 
     /**
@@ -252,29 +259,38 @@ public class CardLoader {
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter) {
         ensurePrimaryStageSet();
-        loadCards(containerName, items, cardFxmlPath, dataSetter, primaryStage, 0, 0);
+        loadCards(containerName, items, cardName, dataSetter, primaryStage, 0, 0);
     }
 
     /**
      * Loads multiple cards into a container using the primary stage with uniform margins.
      *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
+     *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, double margin) {
         ensurePrimaryStageSet();
-        loadCards(containerName, items, cardFxmlPath, dataSetter, primaryStage, margin, margin);
+        loadCards(containerName, items, cardName, dataSetter, primaryStage, margin, margin);
     }
 
     /**
@@ -283,16 +299,23 @@ public class CardLoader {
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *       target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter,
                               double horizontalMargin, double verticalMargin) {
         ensurePrimaryStageSet();
-        loadCards(containerName, items, cardFxmlPath, dataSetter, primaryStage,
+        loadCards(containerName, items, cardName, dataSetter, primaryStage,
                 horizontalMargin, verticalMargin);
     }
 
@@ -302,13 +325,19 @@ public class CardLoader {
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *      Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, Stage stage) {
-        loadCards(containerName, items, cardFxmlPath, dataSetter, stage, 0, 0);
+        loadCards(containerName, items, cardName, dataSetter, stage, 0, 0);
     }
 
     /**
@@ -317,14 +346,20 @@ public class CardLoader {
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *     Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, Stage stage, double margin) {
-        loadCards(containerName, items, cardFxmlPath, dataSetter, stage, margin, margin);
+        loadCards(containerName, items, cardName, dataSetter, stage, margin, margin);
     }
 
     /**
@@ -334,21 +369,28 @@ public class CardLoader {
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *      Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
+    public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, Stage stage,
                               double horizontalMargin, double verticalMargin) {
-
-        loadingService.loadCards(containerName, items, cardFxmlPath, dataSetter, stage,
-                horizontalMargin, verticalMargin, stageContainers);
+        String cardFxmlPath = getCardPath(cardName);
+        Pane container = getContainerFromRegistry(containerName, stage);
+        loadingService.loadCards(container, items, cardFxmlPath, dataSetter,
+                horizontalMargin, verticalMargin);
     }
 
-    // ==================== MULTIPLE CARDS LOADING WITH CONTROLLER RETURN ====================
+// ==================== MULTIPLE CARDS LOADING WITH CONTROLLER RETURN ====================//
 
     /**
      * Loads multiple cards and returns their controllers using primary stage with no margins.
@@ -357,14 +399,16 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @return a list of card controller instances
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter) {
         ensurePrimaryStageSet();
-        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+        return loadCardsWithControllers(containerName, items, cardName, dataSetter,
                 primaryStage, 0, 0);
     }
 
@@ -375,15 +419,22 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
      * @return a list of card controller instances
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter, double margin) {
         ensurePrimaryStageSet();
-        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+        return loadCardsWithControllers(containerName, items, cardName, dataSetter,
                 primaryStage, margin, margin);
     }
 
@@ -394,17 +445,24 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
      * @return a list of card controller instances
+     * @throws IllegalStateException if the primary stage has not been set
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter,
                                                    double horizontalMargin, double verticalMargin) {
         ensurePrimaryStageSet();
-        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+        return loadCardsWithControllers(containerName, items, cardName, dataSetter,
                 primaryStage, horizontalMargin, verticalMargin);
     }
 
@@ -415,14 +473,20 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @return a list of card controller instances
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter, Stage stage) {
-        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+        return loadCardsWithControllers(containerName, items, cardName, dataSetter,
                 stage, 0, 0);
     }
 
@@ -433,15 +497,21 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
      * @return a list of card controller instances
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter, Stage stage, double margin) {
-        return loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter,
+        return loadCardsWithControllers(containerName, items, cardName, dataSetter,
                 stage, margin, margin);
     }
 
@@ -453,19 +523,82 @@ public class CardLoader {
      * @param <C> the type of the card controllers
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
-     * @param cardFxmlPath the FXML path for the card template
+     * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
      * @return a list of card controller instances
+     * @throws IllegalArgumentException if the card is not registered
+     *
+     *
+     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter, Stage stage,
                                                    double horizontalMargin, double verticalMargin) {
-        return loadingService.loadCardsWithControllers(containerName, items, cardFxmlPath, dataSetter, stage,
-                horizontalMargin, verticalMargin, stageContainers);
+        String cardFxmlPath = getCardPath(cardName);
+        Pane container = getContainerFromRegistry(containerName, stage);
+        return loadingService.loadCardsWithControllers(container, items, cardFxmlPath, dataSetter,
+                horizontalMargin, verticalMargin);
     }
+
+        // ==================== SINGLE CARD ADDERS ====================//
+
+    /**
+     * Adds a single card to an existing container and returns its controller.
+     * <p>
+     * <b>WARNING: State Synchronization Required</b><br>
+     * This method only adds a visual representation to the UI. It is the
+     * <i>developer's responsibility</i> to also add the corresponding data item
+     * to their underlying data model (e.g., {@code List<T> items}).
+     * </p>
+     * <p>
+     * <b>Why?</b> Any subsequent call to {@link #loadCardsWithControllers} will use
+     * the developer's data list to rebuild the UI. If the new item is not in that
+     * list, it will not appear after a refresh.
+     * </p>
+     *
+     * @param <T>          the type of data items
+     * @param <C>          the type of card controllers
+     * @param containerName the name of the target container
+     * @param item          the data item for the new card
+     * @param cardName      the name of the card used in the registery
+     * @param dataSetter    callback for injecting data into the card controller
+     * @param stage         the stage containing the container
+     * @throws IllegalArgumentException if the container is not registered
+     */
+    public <T, C> void addCardToContainer(String containerName, T item, String cardName,
+                                          BiConsumer<C, T> dataSetter, Stage stage) {
+        String cardFxmlPath = getCardPath(cardName);
+        Pane container = getContainerFromRegistry(containerName, stage);
+        loadingService.addCardToContainer(container, item, cardFxmlPath, dataSetter);
+    }
+
+
+    /**
+     * Adds a single card to an existing container and returns its controller.
+     *
+     * @param <T>           the type of data items
+     * @param <C>           the type of the card controllers
+     * @param containerName the name of the target container
+     * @param item          the data item for the new card
+     * @param cardName      the registered name of the card to load
+     * @param dataSetter    a function that binds data items to their card controllers
+     * @param stage         the stage containing the target container
+     * @return              the controller instance of the newly added card
+     * @throws IllegalArgumentException if the card is not registered
+     */
+    public <T, C> C addCardToContainerWithController(String containerName, T item, String cardName,
+                                                     BiConsumer<C, T> dataSetter, Stage stage) {
+        String cardFxmlPath = getCardPath(cardName);
+        Pane container = getContainerFromRegistry(containerName, stage);
+        return loadingService.addCardToContainer(container, item, cardFxmlPath, dataSetter);
+    }
+
 
     // ==================== INTERNAL HELPERS ====================
 
@@ -495,7 +628,49 @@ public class CardLoader {
         }
     }
 
-    // ==================== STATE CHECKS ====================
+    // ==================== INTERNAL HELPER METHODS ====================//
+
+    /**
+     * Gets a container from the registry by name and stage.
+     */
+    private Pane getContainerFromRegistry(String containerName, Stage stage) {
+        Map<String, Pane> containers = stageContainers.get(stage);
+        if (containers == null || !containers.containsKey(containerName)) {
+            throw new IllegalArgumentException("Container '" + containerName + "' not registered for stage");
+        }
+        return containers.get(containerName);
+    }
+
+    /**
+     * Gets a panel from the registry by name and stage.
+     */
+    private AnchorPane getPanelFromRegistry(String panelName, Stage stage) {
+        Map<String, AnchorPane> panels = stagePanels.get(stage);
+        if (panels == null || !panels.containsKey(panelName)) {
+            throw new IllegalArgumentException("Panel '" + panelName + "' not registered for stage");
+        }
+        return panels.get(panelName);
+    }
+
+
+    // ==================== INTERNAL HELPERS ====================
+
+    /**
+     * Gets the FXML path for a registered card name.
+     *
+     * @param cardName the registered name of the card
+     * @return the FXML path associated with the card name
+     * @throws IllegalArgumentException if the card is not registered
+     */
+    private String getCardPath(String cardName) {
+        if (!cardPathsMap.containsKey(cardName)) {
+            throw new IllegalArgumentException("Card '" + cardName + "' is not registered. " +
+                    "Available cards: " + cardPathsMap.keySet());
+        }
+        return cardPathsMap.get(cardName);
+    }
+
+    // ==================== STATE CHECKS ====================//
 
     /**
      * Checks if a panel is in the primary stage's scene

@@ -22,8 +22,8 @@ import static org.frost.internal.loaders.SceneManager.runOnFxThread;
  * Core service implementation for dynamic card loading and management.
  * Handles the actual FXML loading, controller instantiation, and layout composition.
  * <p>
- * This service operates statelessly - all required context is passed as method parameters,
- * ensuring thread safety and clean separation of concerns.
+ * This service operates with direct container references for optimal performance.
+ * All registry management and validation is handled by the CardLoader facade.
  *
  * @see org.frost.internal.loaders.CardLoader The public API facade that delegates to this service
  */
@@ -40,26 +40,30 @@ public class CardLoadingService {
      * Loads and mounts a single card into a specified anchor panel.
      *
      * @param <T> the type of the card's controller
-     * @param cardName the registered name of the card to load
-     * @param anchorPaneName the name of the target anchor panel
-     * @param stage the stage containing the panel
-     * @param cardPathsMap the registry of card names to FXML paths
-     * @param stagePanels the registry of stage panels
+     * @param targetPanel the anchor panel to receive the card (must not be null)
+     * @param cardFxmlPath the FXML path for the card template (must not be null or empty)
+     * @param logicalName logical name for error reporting and logging
+     * @param stage the stage for scene validation (must not be null)
      * @return the controller instance of the loaded card
-     * @throws IllegalArgumentException if the card or panel is not registered
+     * @throws IllegalArgumentException if any parameter is invalid
      * @throws RuntimeException if FXML loading fails
      */
-    public <T> T loadCard(String cardName, String anchorPaneName, Stage stage,
-                          Map<String, String> cardPathsMap,
-                          Map<Stage, Map<String, AnchorPane>> stagePanels) {
-        validateStageAndRegistration(cardName, anchorPaneName, stage, cardPathsMap, stagePanels);
+    public <T> T loadCard(AnchorPane targetPanel, String cardFxmlPath,
+                          String logicalName, Stage stage) {
+        if (targetPanel == null) {
+            throw new IllegalArgumentException("Target panel cannot be null");
+        }
+        if (cardFxmlPath == null || cardFxmlPath.isBlank()) {
+            throw new IllegalArgumentException("Card FXML path cannot be null or empty");
+        }
+        if (stage == null) {
+            throw new IllegalArgumentException("Stage cannot be null");
+        }
 
         try {
-            AnchorPane targetPanel = stagePanels.get(stage).get(anchorPaneName);
-            String path = cardPathsMap.get(cardName);
-            return mountIntoPanel(targetPanel, path, cardName, stage);
+            return mountIntoPanel(targetPanel, cardFxmlPath, logicalName, stage);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load card '" + cardName + "'", e);
+            throw new RuntimeException("Failed to load card '" + logicalName + "' from: " + cardFxmlPath, e);
         }
     }
 
@@ -67,23 +71,26 @@ public class CardLoadingService {
 
     /**
      * Loads multiple cards into a container with specified spacing margins.
+     * Clears the container before adding new cards.
      *
      * @param <T> the type of data items
-     * @param containerName the name of the target container
-     * @param items the data items to populate the cards
-     * @param cardFxmlPath the FXML path for the card template
-     * @param dataSetter callback for injecting data into card controllers
-     * @param stage the stage containing the container
-     * @param horizontalMargin horizontal spacing between cards
-     * @param verticalMargin vertical spacing between cards
-     * @param stageContainers the registry of stage containers
-     * @throws IllegalArgumentException if the container is not registered
+     * @param container the target container to populate with cards (must not be null)
+     * @param items the data items to populate the cards (must not be null)
+     * @param cardFxmlPath the FXML path for the card template (must not be null or empty)
+     * @param dataSetter callback for injecting data into card controllers (can be null)
+     * @param horizontalMargin horizontal spacing between cards in pixels
+     * @param verticalMargin vertical spacing between cards in pixels
+     * @throws IllegalArgumentException if container, items, or cardFxmlPath are invalid
+     * @throws RuntimeException if FXML loading fails
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
-                              BiConsumer<Object, T> dataSetter, Stage stage,
-                              double horizontalMargin, double verticalMargin,
-                              Map<Stage, Map<String, Pane>> stageContainers) {
-        Pane container = validateAndGetContainer(containerName, stage, stageContainers);
+    public <T> void loadCards(Pane container, List<T> items, String cardFxmlPath,
+                              BiConsumer<Object, T> dataSetter,
+                              double horizontalMargin, double verticalMargin) {
+        validateContainerAndPath(container, cardFxmlPath);
+        if (items == null) {
+            throw new IllegalArgumentException("Items list cannot be null");
+        }
+
         loadCardsInternal(items, container, cardFxmlPath, dataSetter, horizontalMargin, verticalMargin);
     }
 
@@ -91,141 +98,163 @@ public class CardLoadingService {
      * Loads multiple cards into a container with uniform spacing margins.
      *
      * @param <T> the type of data items
-     * @param containerName the name of the target container
+     * @param container the target container to populate with cards
      * @param items the data items to populate the cards
      * @param cardFxmlPath the FXML path for the card template
      * @param dataSetter callback for injecting data into card controllers
-     * @param stage the stage containing the container
-     * @param margin uniform spacing applied to both axes
-     * @param stageContainers the registry of stage containers
+     * @param margin uniform spacing applied to both horizontal and vertical axes
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
-                              BiConsumer<Object, T> dataSetter, Stage stage, double margin,
-                              Map<Stage, Map<String, Pane>> stageContainers) {
-        loadCards(containerName, items, cardFxmlPath, dataSetter, stage, margin, margin, stageContainers);
+    public <T> void loadCards(Pane container, List<T> items, String cardFxmlPath,
+                              BiConsumer<Object, T> dataSetter, double margin) {
+        loadCards(container, items, cardFxmlPath, dataSetter, margin, margin);
     }
 
     /**
      * Loads multiple cards into a container with no spacing margins.
      *
      * @param <T> the type of data items
-     * @param containerName the name of the target container
+     * @param container the target container to populate with cards
      * @param items the data items to populate the cards
      * @param cardFxmlPath the FXML path for the card template
      * @param dataSetter callback for injecting data into card controllers
-     * @param stage the stage containing the container
-     * @param stageContainers the registry of stage containers
      */
-    public <T> void loadCards(String containerName, List<T> items, String cardFxmlPath,
-                              BiConsumer<Object, T> dataSetter, Stage stage,
-                              Map<Stage, Map<String, Pane>> stageContainers) {
-        loadCards(containerName, items, cardFxmlPath, dataSetter, stage, 0, 0, stageContainers);
+    public <T> void loadCards(Pane container, List<T> items, String cardFxmlPath,
+                              BiConsumer<Object, T> dataSetter) {
+        loadCards(container, items, cardFxmlPath, dataSetter, 0, 0);
     }
+
+    // ==================== MULTIPLE CARDS WITH CONTROLLER RETURN ====================
 
     /**
      * Loads multiple cards and returns their controller instances for external management.
-     * Enables direct controller manipulation after loading.
+     * Clears the container before adding new cards.
      *
      * @param <T> the type of data items
      * @param <C> the type of card controllers
-     * @param containerName the name of the target container
+     * @param container the target container to populate with cards (must not be null)
+     * @param items the data items to populate the cards (must not be null)
+     * @param cardFxmlPath the FXML path for the card template (must not be null or empty)
+     * @param dataSetter callback for injecting data into card controllers (can be null)
+     * @param horizontalMargin horizontal spacing between cards in pixels
+     * @param verticalMargin vertical spacing between cards in pixels
+     * @return a list of card controller instances (never null)
+     * @throws IllegalArgumentException if container, items, or cardFxmlPath are invalid
+     * @throws RuntimeException if FXML loading fails
+     */
+    public <T, C> List<C> loadCardsWithControllers(Pane container, List<T> items, String cardFxmlPath,
+                                                   BiConsumer<C, T> dataSetter,
+                                                   double horizontalMargin, double verticalMargin) {
+        validateContainerAndPath(container, cardFxmlPath);
+        if (items == null) {
+            throw new IllegalArgumentException("Items list cannot be null");
+        }
+
+        return loadCardsInternalWithControllers(items, container, cardFxmlPath, dataSetter,
+                horizontalMargin, verticalMargin);
+    }
+
+    /**
+     * Loads multiple cards and returns their controllers with uniform spacing.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param container the target container to populate with cards
      * @param items the data items to populate the cards
      * @param cardFxmlPath the FXML path for the card template
      * @param dataSetter callback for injecting data into card controllers
-     * @param stage the stage containing the container
-     * @param horizontalMargin horizontal spacing between cards
-     * @param verticalMargin vertical spacing between cards
-     * @param stageContainers the registry of stage containers
+     * @param margin uniform spacing applied to both axes
      * @return a list of card controller instances
      */
-    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardFxmlPath,
-                                                   BiConsumer<C, T> dataSetter, Stage stage,
-                                                   double horizontalMargin, double verticalMargin,
-                                                   Map<Stage, Map<String, Pane>> stageContainers) {
-        Pane container = validateAndGetContainer(containerName, stage, stageContainers);
-        return loadCardsInternalWithControllers(items, container, cardFxmlPath, dataSetter,
-                horizontalMargin, verticalMargin);
+    public <T, C> List<C> loadCardsWithControllers(Pane container, List<T> items, String cardFxmlPath,
+                                                   BiConsumer<C, T> dataSetter, double margin) {
+        return loadCardsWithControllers(container, items, cardFxmlPath, dataSetter, margin, margin);
+    }
+
+    /**
+     * Loads multiple cards and returns their controllers with no spacing.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param container the target container to populate with cards
+     * @param items the data items to populate the cards
+     * @param cardFxmlPath the FXML path for the card template
+     * @param dataSetter callback for injecting data into card controllers
+     * @return a list of card controller instances
+     */
+    public <T, C> List<C> loadCardsWithControllers(Pane container, List<T> items, String cardFxmlPath,
+                                                   BiConsumer<C, T> dataSetter) {
+        return loadCardsWithControllers(container, items, cardFxmlPath, dataSetter, 0, 0);
+    }
+
+    // ==================== SINGLE CARD ADDITION ====================
+
+    /**
+     * Adds a single card to an existing container and returns its controller.
+     * Does not clear the container - appends to existing content.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param container the target container to add the card to (must not be null)
+     * @param item the data item for the new card (must not be null)
+     * @param cardFxmlPath the FXML path for the card template (must not be null or empty)
+     * @param dataSetter callback for injecting data into the card controller (can be null)
+     * @return the controller instance of the newly added card
+     * @throws IllegalArgumentException if container, item, or cardFxmlPath are invalid
+     * @throws RuntimeException if FXML loading fails
+     */
+    public <T, C> C addCardToContainer(Pane container, T item, String cardFxmlPath,
+                                       BiConsumer<C, T> dataSetter) {
+        validateContainerAndPath(container, cardFxmlPath);
+        if (item == null) {
+            throw new IllegalArgumentException("Item cannot be null");
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(SceneManager.class.getResource(cardFxmlPath));
+            Node card = loader.load();
+            @SuppressWarnings("unchecked")
+            C controller = (C) loader.getController();
+
+            if (dataSetter != null) {
+                dataSetter.accept(controller, item);
+            }
+
+            runOnFxThread(() -> container.getChildren().add(card));
+            return controller;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load card from: " + cardFxmlPath, e);
+        }
     }
 
     // ==================== VALIDATION HELPERS ====================
 
     /**
-     * Validates that the specified card and panel are registered for the given stage.
+     * Validates that container and FXML path are not null or empty.
      *
-     * @param cardName the card name to validate
-     * @param anchorPaneName the panel name to validate
-     * @param stage the stage to check registrations against
-     * @param cardPathsMap the card registry
-     * @param stagePanels the panel registry
+     * @param container the container to validate
+     * @param cardFxmlPath the FXML path to validate
      * @throws IllegalArgumentException if validation fails
      */
-    private void validateStageAndRegistration(String cardName, String anchorPaneName, Stage stage,
-                                              Map<String, String> cardPathsMap,
-                                              Map<Stage, Map<String, AnchorPane>> stagePanels) {
-        if (stage == null) {
-            throw new IllegalArgumentException("Stage cannot be null");
+    private void validateContainerAndPath(Pane container, String cardFxmlPath) {
+        if (container == null) {
+            throw new IllegalArgumentException("Container cannot be null");
         }
-
-        Map<String, AnchorPane> panels = stagePanels.get(stage);
-        if (panels == null || !panels.containsKey(anchorPaneName)) {
-            throw new IllegalStateException("No dynamic panel '" + anchorPaneName + "' registered for stage '"
-                    + stage.getTitle() + "'. Call registerDynamicPanel('" + anchorPaneName + "', panel, stage) first.");
+        if (cardFxmlPath == null || cardFxmlPath.isBlank()) {
+            throw new IllegalArgumentException("Card FXML path cannot be null or empty");
         }
-
-        if (!cardPathsMap.containsKey(cardName)) {
-            throw new IllegalArgumentException("Card '" + cardName + "' is not registered. "
-                    + "Call registerCard('" + cardName + "', '/path/to/fxml.fxml') first.");
-        }
-    }
-
-    /**
-     * Validates and retrieves a container from the registry.
-     *
-     * @param containerName the container name to retrieve
-     * @param stage the stage containing the container
-     * @param stageContainers the container registry
-     * @return the requested Pane container
-     * @throws IllegalArgumentException if the container is not found
-     */
-    private Pane validateAndGetContainer(String containerName, Stage stage,
-                                         Map<Stage, Map<String, Pane>> stageContainers) {
-        if (stage == null) {
-            throw new IllegalArgumentException("Stage cannot be null");
-        }
-
-        Map<String, Pane> containers = stageContainers.get(stage);
-        if (containers == null || !containers.containsKey(containerName)) {
-            throw new IllegalArgumentException("Container '" + containerName + "' is not registered for stage '"
-                    + stage.getTitle() + "'. Call registerContainer('" + containerName + "', containerPane, stage) first.");
-        }
-
-        return containers.get(containerName);
     }
 
     // ==================== CORE IMPLEMENTATION METHODS ====================
 
     /**
      * Core implementation for mounting a single card into an anchor panel.
-     * Ensures proper layout constraints and thread safety.
-     *
-     * @param <T> the type of the card's controller
-     * @param targetPanel the anchor panel to receive the card
-     * @param resourcePath the FXML resource path
-     * @param logicalName logical name for error reporting
-     * @param stage the stage for scene validation
-     * @return the loaded card's controller
-     * @throws IOException if FXML loading fails
-     * @throws IllegalStateException if the panel is not in the stage's scene
      */
     private <T> T mountIntoPanel(AnchorPane targetPanel, String resourcePath,
                                  String logicalName, Stage stage) throws IOException {
-        if (targetPanel == null) throw new IllegalArgumentException("Target panel cannot be null");
-        if (stage == null) throw new IllegalArgumentException("Stage cannot be null");
-
         URL url = SceneManager.class.getResource(resourcePath);
         if (url == null) {
-            throw new IllegalArgumentException("FXML not found: " + resourcePath
-                    + ". Check that the file exists in your resources directory.");
+            throw new IllegalArgumentException("FXML not found: " + resourcePath);
         }
 
         FXMLLoader loader = new FXMLLoader(url);
@@ -236,7 +265,7 @@ public class CardLoadingService {
             if (targetPanel.getScene() != stage.getScene()) {
                 throw new IllegalStateException(
                         "Target panel '" + logicalName + "' is not in the active scene for stage '"
-                                + stage.getTitle() + "'. Ensure the panel belongs to the correct stage's scene."
+                                + stage.getTitle() + "'"
                 );
             }
             targetPanel.getChildren().setAll(card);
@@ -245,20 +274,12 @@ public class CardLoadingService {
             AnchorPane.setBottomAnchor(card, 0.0);
             AnchorPane.setLeftAnchor(card, 0.0);
         });
+
         return (T) loadedController;
     }
 
     /**
      * Core implementation for loading multiple cards without controller return.
-     * Clears the container and populates it with new cards.
-     *
-     * @param <T> the type of data items
-     * @param container the target container
-     * @param items the data items for card population
-     * @param cardFxmlPath the FXML template path
-     * @param dataSetter data injection callback
-     * @param horizontalMargin horizontal spacing
-     * @param verticalMargin vertical spacing
      */
     private <T> void loadCardsInternal(List<T> items, Pane container, String cardFxmlPath,
                                        BiConsumer<Object, T> dataSetter,
@@ -290,17 +311,6 @@ public class CardLoadingService {
 
     /**
      * Core implementation for loading multiple cards with controller return.
-     * Enables external controller management for dynamic updates.
-     *
-     * @param <T> the type of data items
-     * @param <C> the type of card controllers
-     * @param items the data items for card population
-     * @param container the target container
-     * @param cardFxmlPath the FXML template path
-     * @param dataSetter data injection callback
-     * @param horizontalMargin horizontal spacing
-     * @param verticalMargin vertical spacing
-     * @return list of card controller instances
      */
     private <T, C> List<C> loadCardsInternalWithControllers(List<T> items, Pane container, String cardFxmlPath,
                                                             BiConsumer<C, T> dataSetter,
@@ -338,13 +348,8 @@ public class CardLoadingService {
         return controllers;
     }
 
-    /**
-     * Adds spacing elements between cards based on margin requirements.
-     *
-     * @param container the container to add spacers to
-     * @param horizontalMargin horizontal spacing amount
-     * @param verticalMargin vertical spacing amount
-     */
+    // ==================== UTILITY METHODS ====================
+
     private void addMarginSpacers(Pane container, double horizontalMargin, double verticalMargin) {
         if (horizontalMargin > 0) {
             Region hSpacer = createSpacer(horizontalMargin, true);
@@ -357,13 +362,6 @@ public class CardLoadingService {
         }
     }
 
-    /**
-     * Creates a spacer region for card separation.
-     *
-     * @param size the size of the spacer in pixels
-     * @param isHorizontal true for horizontal spacer, false for vertical
-     * @return a configured Region for spacing
-     */
     private Region createSpacer(double size, boolean isHorizontal) {
         Region spacer = new Region();
 
@@ -371,20 +369,13 @@ public class CardLoadingService {
             spacer.setMinWidth(size);
             spacer.setPrefWidth(size);
             spacer.setMaxWidth(size);
-            spacer.setMinHeight(1);
-            spacer.setPrefHeight(Region.USE_COMPUTED_SIZE);
-            spacer.setMaxHeight(Double.MAX_VALUE);
         } else {
             spacer.setMinHeight(size);
             spacer.setPrefHeight(size);
             spacer.setMaxHeight(size);
-            spacer.setMinWidth(1);
-            spacer.setPrefWidth(Region.USE_COMPUTED_SIZE);
-            spacer.setMaxWidth(Double.MAX_VALUE);
         }
 
-        spacer.setStyle("-fx-background-color: lightgray; -fx-opacity: 0.3;");
-
+        spacer.getStyleClass().add("frostfx-spacer");
         return spacer;
     }
 }
