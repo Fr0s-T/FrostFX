@@ -12,11 +12,11 @@ import java.util.function.BiConsumer;
  * The main entry point for dynamic card and component management within the FrostFX framework.
  * This class serves as a facade that provides a clean, type-safe public API while delegating
  * the actual loading logic to an internal service implementation.
- * <p>
+ *<p>
  * CardLoader manages the lifecycle of reusable UI components ("cards") across multiple
  * stages and containers, providing thread-safe loading operations and comprehensive
  * state management.
- *
+ *</p>
  * @see CardLoadingService
  */
 public class CardLoader {
@@ -234,7 +234,9 @@ public class CardLoader {
         return loadingService.loadCard(targetPanel, cardFxmlPath, cardName, stage);
     }
 
-// ==================== MULTIPLE CARDS LOADING METHODS ====================//
+
+
+    // ==================== MULTIPLE CARDS LOADING METHODS ====================//
 
     /**
      * Loads multiple cards into a container using the primary stage with no margins.
@@ -255,6 +257,21 @@ public class CardLoader {
     /**
      * Loads multiple cards into a container using the primary stage with no margins.
      * Includes data injection capability through the provided BiConsumer.
+     * <p>
+     * <b>Important:</b> Since this method returns <code>void</code>, the generic
+     * type <code>C</code> (the controller) cannot be inferred automatically by
+     * Java when using lambdas. You must:
+     * </p>
+     * <ul>
+     *     <li>Specify explicit types in the lambda:
+     *         <pre>(MyController c, MyData d) -> { ... }</pre>
+     *     </li>
+     * </ul>
+     *<p>
+     * Any subsequent call to {@link #loadCardsWithControllers} will use
+     * the developer's data list to rebuild the UI. If the new item is not in that
+     * list, it will not appear after a refresh.
+     *</p>
      *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
@@ -272,11 +289,27 @@ public class CardLoader {
 
     /**
      * Loads multiple cards into a container using the primary stage with uniform margins.
+     * Includes optional data injection.
+     * <p>
+     * <b>Important:</b> Since this method returns <code>void</code>, the generic
+     * type <code>C</code> (the controller) cannot be inferred automatically by
+     * Java when using lambdas. You must:
+     * </p>
+     * <ul>
+     *     <li>Specify explicit types in the lambda:
+     *         <pre>(MyController c, MyData d) -> { ... }</pre>
+     *     </li>
+     * </ul>
+     *<p>
+     * Any subsequent call to {@link #loadCardsWithControllers} will use
+     * the developer's data list to rebuild the UI. If the new item is not in that
+     * list, it will not appear after a refresh.
+     *</p>
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
-     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
-     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
-     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
      *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
@@ -295,6 +328,28 @@ public class CardLoader {
 
     /**
      * Loads multiple cards into a container using the primary stage with dual margins.
+     * Includes optional data injection.
+     * <p>
+     * <b>Important:</b> Since this method returns <code>void</code>, the generic
+     * type <code>C</code> (the controller) cannot be inferred automatically by
+     * Java when using lambdas. You must:
+     * </p>
+     * <ul>
+     *     <li>Specify explicit types in the lambda:
+     *         <pre>(MyController c, MyData d) -> { ... }</pre>
+     *     </li>
+     * </ul>
+     *<p>
+     * Any subsequent call to {@link #loadCardsWithControllers} will use
+     * the developer's data list to rebuild the UI. If the new item is not in that
+     * list, it will not appear after a refresh.
+     *</p>
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
+     *
+     *
      *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
@@ -306,10 +361,6 @@ public class CardLoader {
      * @throws IllegalStateException if the primary stage has not been set
      * @throws IllegalArgumentException if the card is not registered
      *
-     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
-     *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
-     *       target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
-     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter,
@@ -320,52 +371,28 @@ public class CardLoader {
     }
 
     /**
-     * Loads multiple cards into a container using a specific stage with no margins.
+     * Loads multiple cards into a container using a specific stage.
+     * Supports optional data injection and margins.
+     * <p>
+     * <b>Important:</b> Since this method returns <code>void</code>, the generic
+     * type <code>C</code> (the controller) cannot be inferred automatically by
+     * Java when using lambdas. You must:
+     * </p>
+     * <ul>
+     *     <li>Specify explicit types in the lambda:
+     *         <pre>(MyController c, MyData d) -> { ... }</pre>
+     *     </li>
+     * </ul>
+     *<p>
+     * Any subsequent call to {@link #loadCardsWithControllers} will use
+     * the developer's data list to rebuild the UI. If the new item is not in that
+     * list, it will not appear after a refresh.
+     *</p>
      *
-     * @param <T> the type of data items
-     * @param containerName the name of the container to populate with cards
-     * @param items the list of data items to display (one card per item)
-     * @param cardName the registered name of the card to load
-     * @param dataSetter a function that binds data items to their card controllers
-     * @param stage the stage containing the target container
-     * @throws IllegalArgumentException if the card is not registered
-     *
-     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
-     *      Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
-     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
-     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
-     */
-    public <T> void loadCards(String containerName, List<T> items, String cardName,
-                              BiConsumer<Object, T> dataSetter, Stage stage) {
-        loadCards(containerName, items, cardName, dataSetter, stage, 0, 0);
-    }
-
-    /**
-     * Loads multiple cards into a container using a specific stage with uniform margins.
-     *
-     * @param <T> the type of data items
-     * @param containerName the name of the container to populate with cards
-     * @param items the list of data items to display (one card per item)
-     * @param cardName the registered name of the card to load
-     * @param dataSetter a function that binds data items to their card controllers
-     * @param stage the stage containing the target container
-     * @param margin the uniform margin (applied to both horizontal and vertical spacing)
-     * @throws IllegalArgumentException if the card is not registered
-     *
-     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
-     *     Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
-     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
-     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
-     */
-    public <T> void loadCards(String containerName, List<T> items, String cardName,
-                              BiConsumer<Object, T> dataSetter, Stage stage, double margin) {
-        loadCards(containerName, items, cardName, dataSetter, stage, margin, margin);
-    }
-
-    /**
-     * Master method for loading multiple cards into a container.
-     * All other loadCards methods delegate to this implementation.
-     *
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
@@ -376,10 +403,6 @@ public class CardLoader {
      * @param verticalMargin the vertical spacing between cards
      * @throws IllegalArgumentException if the card is not registered
      *
-     *@CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
-     *      Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
-     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
-     *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, Stage stage,
@@ -389,6 +412,7 @@ public class CardLoader {
         loadingService.loadCards(container, items, cardFxmlPath, dataSetter,
                 horizontalMargin, verticalMargin);
     }
+
 
 // ==================== MULTIPLE CARDS LOADING WITH CONTROLLER RETURN ====================//
 
@@ -426,7 +450,7 @@ public class CardLoader {
      * @throws IllegalStateException if the primary stage has not been set
      * @throws IllegalArgumentException if the card is not registered
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
@@ -453,7 +477,7 @@ public class CardLoader {
      * @throws IllegalStateException if the primary stage has not been set
      * @throws IllegalArgumentException if the card is not registered
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
@@ -479,7 +503,7 @@ public class CardLoader {
      * @return a list of card controller instances
      * @throws IllegalArgumentException if the card is not registered
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
@@ -504,7 +528,7 @@ public class CardLoader {
      * @return a list of card controller instances
      * @throws IllegalArgumentException if the card is not registered
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
@@ -532,7 +556,7 @@ public class CardLoader {
      * @throws IllegalArgumentException if the card is not registered
      *
      *
-     *  @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      *      Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
@@ -549,27 +573,36 @@ public class CardLoader {
         // ==================== SINGLE CARD ADDERS ====================//
 
     /**
-     * Adds a single card to an existing container and returns its controller.
-     * <p>
+     * Adds a single card to an existing container without returning the controller.
+     *<p>
      * <b>WARNING: State Synchronization Required</b><br>
      * This method only adds a visual representation to the UI. It is the
      * <i>developer's responsibility</i> to also add the corresponding data item
      * to their underlying data model (e.g., {@code List<T> items}).
      * </p>
      * <p>
-     * <b>Why?</b> Any subsequent call to {@link #loadCardsWithControllers} will use
+     * <b>Important:</b> Since this method returns <code>void</code>, the generic
+     * type <code>C</code> (the controller) cannot be inferred automatically by
+     * Java when using lambdas. You must:
+     * </p>
+     * <ul>
+     *     <li>Specify explicit types in the lambda:
+     *         <pre>(MyController c, MyData d) -> { ... }</pre>
+     *     </li>
+     * </ul>
+     *<p>
+     * Any subsequent call to {@link #loadCardsWithControllers} will use
      * the developer's data list to rebuild the UI. If the new item is not in that
      * list, it will not appear after a refresh.
-     * </p>
-     *
-     * @param <T>          the type of data items
-     * @param <C>          the type of card controllers
+     *</p>
+     * @param <T>           the type of data items
+     * @param <C>           the type of card controllers
      * @param containerName the name of the target container
      * @param item          the data item for the new card
-     * @param cardName      the name of the card used in the registery
+     * @param cardName      the name of the card used in the registry
      * @param dataSetter    callback for injecting data into the card controller
      * @param stage         the stage containing the container
-     * @throws IllegalArgumentException if the container is not registered
+     * @throws IllegalArgumentException if the container or card is not registered
      */
     public <T, C> void addCardToContainer(String containerName, T item, String cardName,
                                           BiConsumer<C, T> dataSetter, Stage stage) {
@@ -577,6 +610,7 @@ public class CardLoader {
         Pane container = getContainerFromRegistry(containerName, stage);
         loadingService.addCardToContainer(container, item, cardFxmlPath, dataSetter);
     }
+
 
 
     /**
@@ -752,9 +786,9 @@ public class CardLoader {
      * - Stage reinitialization
      * - Testing cleanup
      * - Application reset scenarios
-     * <p>
+     *<p>
      * NOTE: This preserves card path registrations since cards are reusable across stages
-     *
+     *</p>
      * @see #clearAll() for complete cleanup including card definitions
      */
     public void clearAllRegistrations() {

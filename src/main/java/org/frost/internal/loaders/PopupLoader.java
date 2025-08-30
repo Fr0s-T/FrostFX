@@ -165,7 +165,7 @@ public class PopupLoader {
         });
     }
 
-    // ==================== PRIVATE HELPERS ====================
+    // ==================== PRIVATE HELPERS ====================//
 
     private Stage createDialogStage(PopupConfig config, Pane root, Window owner) {
         Stage dialogStage = new Stage();

@@ -6,7 +6,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.lang.annotation.Documented;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +22,17 @@ public class SceneLoader {
 
 
     public interface FrameLoaderListener {
-        /** Called immediately before a scene begins loading */
+        /** Called immediately before a scene begins loading
+         *
+         *
+         * @param fxmlPath the path to seen you want to attach this to
+         * */
         void onBeforeSceneLoad(String fxmlPath);
 
-        /** Called immediately after a scene finishes loading */
+        /** Called immediately after a scene finishes loading
+         *
+         * @param fxmlPath the path to seen you want to attach this to
+         * */
         void onAfterSceneLoad(String fxmlPath, Object controller);
     }
 
@@ -47,12 +53,22 @@ public class SceneLoader {
 
     /**
      * Removes a previously registered lifecycle listener
+     *
+     * @param listener the listener you want to remove
      */
     public void removeSceneLoaderListener(FrameLoaderListener listener) {
         sceneListeners.remove(listener);
     }
 
-
+    /**
+     * Loads a complete scene into a stage (void version).
+     * Use for major navigation events (e.g., login → dashboard).
+     * This method is thread-safe.
+     *
+     * @param fxmlPath   Classpath path to the scene FXML
+     * @param controller Optional custom controller (null for FXML-defined)
+     * @throws RuntimeException throws RTE if the fxml class fails to load
+     */
     public void loadScene(String fxmlPath, Object controller){
         loadScene(fxmlPath, controller, primaryStage);
     }
@@ -166,16 +182,22 @@ public class SceneLoader {
         return future;
     }
 
-    // =============== HELPER METHODS ===============]]
+    // =============== HELPER METHODS ===============//
 
-    /** Triggers all before-load lifecycle hooks */
+    /** Triggers all before-load lifecycle hooks
+     *
+     * @param fxmlPath  the path to seen you want to attach this to
+     * */
     private void fireBeforeSceneLoad(String fxmlPath) {
         for (FrameLoaderListener listener : sceneListeners) {
             listener.onBeforeSceneLoad(fxmlPath);
         }
     }
 
-    /** Triggers all after-load lifecycle hooks */
+    /** Triggers all after-load lifecycle hooks
+     *
+     * @param fxmlPath the path to seen you want to attach this to
+     * */
     private void fireAfterSceneLoad(String fxmlPath, Object controller) {
         for (FrameLoaderListener listener : sceneListeners) {
             listener.onAfterSceneLoad(fxmlPath, controller);

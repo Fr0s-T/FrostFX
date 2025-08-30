@@ -92,7 +92,7 @@ public class StageManager {
      * @see #setPrimaryStage(Stage)
      * @see #getPrimaryStage()
      *
-     * @apiNote This method is thread-safe for read operations but should be used
+     * <b>apiNote</b> This method is thread-safe for read operations but should be used
      *          in conjunction with proper initialization sequencing
      *
      * @since 2.0

@@ -13,5 +13,9 @@ import javafx.stage.Stage;
  * @since V1.0.0
  */
 public interface PopupController {
+    /**
+     * override this method and use it as you would use <code>initialize()</code>
+     * @param stage a stage
+     */
     void setDialogStage(Stage stage);
 }

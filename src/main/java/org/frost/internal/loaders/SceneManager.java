@@ -13,8 +13,9 @@ import org.frost.helpers.StageManager;
  * This class follows the facade pattern, presenting a simple interface to the
  * complex underlying framework architecture. All component access is thread-safe
  * and designed for seamless integration throughout the application lifecycle.
+ * </p>
  *
- * <h3>Initialization</h3>
+ * <h2>Initialization</h2>
  * <pre>
  * // In Application.start()
  * {@literal @}Override
@@ -24,7 +25,7 @@ import org.frost.helpers.StageManager;
  * }
  * </pre>
  *
- * <h3>Typical Usage</h3>
+ * <h2>Typical Usage</h2>
  * <pre>
  * // Load scenes (major navigation)
  * SceneManager.SceneLoader().loadScene("/views/main.fxml", controller);
@@ -187,7 +188,7 @@ public final class SceneManager {
 
     /**
      * Reinitialized the framework with a new primary stage.
-     * Combines reset() and init() for convenience.
+     * Combines <code>reset()</code> and <code>init()</code> for convenience.
      *
      * @param newPrimaryStage the new primary stage
      * @param options reset configuration options
