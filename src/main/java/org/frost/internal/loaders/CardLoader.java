@@ -9,14 +9,21 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * The main entry point for dynamic card and component management within the FrostFX framework.
- * This class serves as a facade that provides a clean, type-safe public API while delegating
- * the actual loading logic to an internal service implementation.
- *<p>
- * CardLoader manages the lifecycle of reusable UI components ("cards") across multiple
- * stages and containers, providing thread-safe loading operations and comprehensive
- * state management.
- *</p>
+ * The main entry point for loading and managing dynamic, reusable UI components ("cards") in the FrostFX framework.
+ * <p>
+ * This class serves as a facade, providing a clean, type-safe public API for common operations while delegating
+ * the complex loading and layout logic to an internal {@link CardLoadingService}.
+ * </p>
+ * <p>
+ * <b>Key Responsibilities:</b>
+ * <ul>
+ *   <li>Registering cards, panels, and containers with specific stages.</li>
+ *   <li>Loading individual cards into panels.</li>
+ *   <li>Populating containers with multiple data-bound cards, including spacing.</li>
+ *   <li>Managing the lifecycle and state of UI components across the application.</li>
+ * </ul>
+ * All operations are thread-safe.
+ * </p>
  *
  * @see CardLoadingService
  */
@@ -258,20 +265,17 @@ public class CardLoader {
     /**
      * Loads multiple cards into a container using the primary stage with no margins.
      * Includes data injection capability through the provided BiConsumer.
-     * <p>
-     * <b>Important:</b> Since this method returns <code>void</code>, the generic
-     * type <code>C</code> (the controller) cannot be inferred automatically by
-     * Java when using lambdas. You must:
-     * </p>
-     * <ul>
-     *     <li>Specify explicit types in the lambda:
-     *         <pre>(MyController c, MyData d) -> { ... }</pre>
-     *     </li>
-     * </ul>
      *<p>
-     * Any subsequent call to {@link #loadCardsWithControllers} will use
-     * the developer's data list to rebuild the UI. If the new item is not in that
-     * list, it will not appear after a refresh.
+     *<b>Important: Lambda Type Inference</b>
+     *<p>
+     *Due to Java type erasure, the generic type {@code <C>} (the controller) cannot be
+     * automatically inferred in lambdas. You <i>must</i> specify the types explicitly:
+     * </p>
+     *<pre>{@code
+     * (MyController c, MyData d) -> {c.setData(d)}
+     * }</pre>
+     * <p>
+     *Using {@code (c, d) -> ...} will result in a compilation error.
      *</p>
      *
      * @param <T> the type of data items
@@ -291,20 +295,17 @@ public class CardLoader {
     /**
      * Loads multiple cards into a container using the primary stage with uniform margins.
      * Includes optional data injection.
-     * <p>
-     * <b>Important:</b> Since this method returns <code>void</code>, the generic
-     * type <code>C</code> (the controller) cannot be inferred automatically by
-     * Java when using lambdas. You must:
-     * </p>
-     * <ul>
-     *     <li>Specify explicit types in the lambda:
-     *         <pre>(MyController c, MyData d) -> { ... }</pre>
-     *     </li>
-     * </ul>
      *<p>
-     * Any subsequent call to {@link #loadCardsWithControllers} will use
-     * the developer's data list to rebuild the UI. If the new item is not in that
-     * list, it will not appear after a refresh.
+     *<b>Important: Lambda Type Inference</b>
+     *<p>
+     *Due to Java type erasure, the generic type {@code <C>} (the controller) cannot be
+     * automatically inferred in lambdas. You <i>must</i> specify the types explicitly:
+     * </p>
+     *<pre>{@code
+     * (MyController c, MyData d) -> {c.setData(d)}
+     * }</pre>
+     * <p>
+     *Using {@code (c, d) -> ...} will result in a compilation error.
      *</p>
      *
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
@@ -329,20 +330,17 @@ public class CardLoader {
     /**
      * Loads multiple cards into a container using the primary stage with dual margins.
      * Includes optional data injection.
-     * <p>
-     * <b>Important:</b> Since this method returns <code>void</code>, the generic
-     * type <code>C</code> (the controller) cannot be inferred automatically by
-     * Java when using lambdas. You must:
-     * </p>
-     * <ul>
-     *     <li>Specify explicit types in the lambda:
-     *         <pre>(MyController c, MyData d) -> { ... }</pre>
-     *     </li>
-     * </ul>
      *<p>
-     * Any subsequent call to {@link #loadCardsWithControllers} will use
-     * the developer's data list to rebuild the UI. If the new item is not in that
-     * list, it will not appear after a refresh.
+     *<b>Important: Lambda Type Inference</b>
+     *<p>
+     *Due to Java type erasure, the generic type {@code <C>} (the controller) cannot be
+     * automatically inferred in lambdas. You <i>must</i> specify the types explicitly:
+     * </p>
+     *<pre>{@code
+     * (MyController c, MyData d) -> {c.setData(d)}
+     * }</pre>
+     * <p>
+     *Using {@code (c, d) -> ...} will result in a compilation error.
      *</p>
      *
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
@@ -370,26 +368,24 @@ public class CardLoader {
     /**
      * Loads multiple cards into a container using a specific stage.
      * Supports optional data injection and margins.
-     * <p>
-     * <b>Important:</b> Since this method returns <code>void</code>, the generic
-     * type <code>C</code> (the controller) cannot be inferred automatically by
-     * Java when using lambdas. You must:
-     * </p>
-     * <ul>
-     *     <li>Specify explicit types in the lambda:
-     *         <pre>(MyController c, MyData d) -> { ... }</pre>
-     *     </li>
-     * </ul>
      *<p>
-     * Any subsequent call to {@link #loadCardsWithControllers} will use
-     * the developer's data list to rebuild the UI. If the new item is not in that
-     * list, it will not appear after a refresh.
+     *<b>Important: Lambda Type Inference</b>
+     *<p>
+     *Due to Java type erasure, the generic type {@code <C>} (the controller) cannot be
+     * automatically inferred in lambdas. You <i>must</i> specify the types explicitly:
+     * </p>
+     *<pre>{@code
+     * (MyController c, MyData d) -> {c.setData(d)}
+     * }</pre>
+     * <p>
+     *Using {@code (c, d) -> ...} will result in a compilation error.
      *</p>
      *
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
+     *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
@@ -411,6 +407,24 @@ public class CardLoader {
 
 
 // ==================== MULTIPLE CARDS LOADING WITH CONTROLLER RETURN ====================//
+
+    /**
+     * Loads multiple cards and returns their controllers using primary stage with no margins.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of the card controllers
+     * @param containerName the name of the container to populate with cards
+     * @param items the list of data items to display (one card per item)
+     * @param cardName the registered name of the card to load
+     * @return a list of card controller instances
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
+     */
+    public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName) {
+        ensurePrimaryStageSet();
+        return loadCardsWithControllers(containerName, items, cardName, null,
+                primaryStage, 0, 0);
+    }
 
     /**
      * Loads multiple cards and returns their controllers using primary stage with no margins.
@@ -563,33 +577,25 @@ public class CardLoader {
         // ==================== SINGLE CARD ADDERS ====================//
 
     /**
-     * Adds a single card to an existing container without returning the controller.
-     *<p>
-     * <b>WARNING: State Synchronization Required</b><br>
-     * This method only adds a visual representation to the UI. It is the
-     * <i>developer's responsibility</i> to also add the corresponding data item
-     * to their underlying data model (e.g., {@code List<T> items}).
+     * <b>WARNING: State Synchronization</b>
+     * <p>
+     * This method adds a card visually.
      * </p>
      * <p>
-     * <b>Important:</b> Since this method returns <code>void</code>, the generic
-     * type <code>C</code> (the controller) cannot be inferred automatically by
-     * Java when using lambdas. You must:
+     * <b>You MUST also add the {@code item} to your own data list.</b> Any subsequent call to
+     * {@link #loadCards} or {@link #loadCardsWithControllers} will <i>completely wipe</i> the container
+     * and rebuild it <i>only from the items in the list you provide to those methods</i>. The controller
+     * added by this method will be lost if its data item is not in that list.
      * </p>
-     * <ul>
-     *     <li>Specify explicit types in the lambda:
-     *         <pre>(MyController c, MyData d) -> { ... }</pre>
-     *     </li>
-     * </ul>
-     *<p>
-     * Any subsequent call to {@link #loadCardsWithControllers} will use
-     * the developer's data list to rebuild the UI. If the new item is not in that
-     * list, it will not appear after a refresh.
-     *</p>
+     * <p>
+     * This method is for advanced, granular UI updates. You are responsible for synchronizing
+     * the state of your data model, the UI.
+     * </p>
      *
      * @param <T>           the type of data items
      * @param <C>           the type of card controllers
      * @param containerName the name of the target container
-     * @param item          the data item for the new card
+     * @param item          the data item for the new card. <b>You must also add this to your data model.</b>
      * @param cardName      the name of the card used in the registry
      * @param dataSetter    callback for injecting data into the card controller
      * @param stage         the stage containing the container
@@ -605,17 +611,29 @@ public class CardLoader {
 
 
     /**
-     * Adds a single card to an existing container and returns its controller.
+     * <b>WARNING: State Synchronization</b>
+     * <p>
+     * This method adds a card visually.
+     * </p>
+     * <p>
+     * <b>You MUST also add the {@code item} to your own data list.</b> Any subsequent call to
+     * {@link #loadCards} or {@link #loadCardsWithControllers} will <i>completely wipe</i> the container
+     * and rebuild it <i>only from the items in the list you provide to those methods</i>. The controller
+     * added by this method will be lost if its data item is not in that list.
+     * </p>
+     * <p>
+     * This method is for advanced, granular UI updates. You are responsible for synchronizing
+     * the state of your data model, the UI, and this loader's returned controller.
+     * </p>
      *
      * @param <T>           the type of data items
-     * @param <C>           the type of the card controllers
+     * @param <C>           the type of card controllers
      * @param containerName the name of the target container
-     * @param item          the data item for the new card
-     * @param cardName      the registered name of the card to load
-     * @param dataSetter    a function that binds data items to their card controllers
-     * @param stage         the stage containing the target container
-     * @return              the controller instance of the newly added card
-     * @throws java.lang.IllegalArgumentException if the card is not registered
+     * @param item          the data item for the new card. <b>You must also add this to your data model.</b>
+     * @param cardName      the name of the card used in the registry
+     * @param dataSetter    callback for injecting data into the card controller
+     * @param stage         the stage containing the container
+     * @throws java.lang.IllegalArgumentException if the container or card is not registered
      */
     public <T, C> C addCardToContainerWithController(String containerName, T item, String cardName,
                                                      BiConsumer<C, T> dataSetter, Stage stage) {
