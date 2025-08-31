@@ -44,6 +44,9 @@ public class PopupLoader {
 
     private final Map<String, Stage> activePopups = new HashMap<>();
 
+    /**
+     * <p>Constructor for PopupLoader.</p>
+     */
     public PopupLoader() {}
 
     /**
@@ -52,8 +55,8 @@ public class PopupLoader {
      * @param fxmlPath path to the FXML resource (must not be null or blank)
      * @param config   popup configuration object
      * @param <T>      type of the controller associated with the FXML
-     * @throws IllegalArgumentException if {@code fxmlPath} is null or blank
-     * @throws RuntimeException         if the FXML could not be loaded
+     * @throws java.lang.IllegalArgumentException if {@code fxmlPath} is null or blank
+     * @throws java.lang.RuntimeException         if the FXML could not be loaded
      */
     public <T> void loadPopupWindow(String fxmlPath, PopupConfig config) {
         loadPopupWindow(fxmlPath, config, null);

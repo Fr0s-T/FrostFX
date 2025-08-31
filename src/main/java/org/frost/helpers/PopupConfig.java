@@ -10,6 +10,7 @@ import java.util.function.Consumer;
  * such as title, modality, size, icon, and whether it blocks
  * until closed.
  * </p>
+ *
  * @author Frost
  */
 public class PopupConfig {
@@ -24,6 +25,7 @@ public class PopupConfig {
 
     /**
      * Sets the popup title.
+     *
      * @param title the title text for the popup window
      * @return the PopupConfig instance
      */
@@ -34,6 +36,7 @@ public class PopupConfig {
 
     /**
      * Sets whether popup is resizable.
+     *
      * @param resizable true to allow resizing, false to disable
      * @return the PopupConfig instance
      */
@@ -44,6 +47,7 @@ public class PopupConfig {
 
     /**
      * Sets whether popup is modal.
+     *
      * @param modal true for modal (blocks parent window), false for modeless
      * @return the PopupConfig instance
      */
@@ -54,6 +58,7 @@ public class PopupConfig {
 
     /**
      * Sets whether to wait for popup to close.
+     *
      * @param waitForClose true to wait for close, false to return immediately
      * @return the PopupConfig instance
      */
@@ -64,6 +69,7 @@ public class PopupConfig {
 
     /**
      * Sets the popup size.
+     *
      * @param width the width of the popup window
      * @param height the height of the popup window
      * @return the PopupConfig instance
@@ -76,6 +82,7 @@ public class PopupConfig {
 
     /**
      * Sets the popup icon.
+     *
      * @param icon the Image to use as window icon
      * @return the PopupConfig instance
      */
@@ -86,6 +93,8 @@ public class PopupConfig {
 
     /**
      * Returns the controller configurator.
+     *
+     * @return a {@link java.util.function.Consumer} object
      */
     public Consumer<Object> getControllerConfigurator() {
         return controllerConfigurator;
@@ -93,41 +102,58 @@ public class PopupConfig {
 
     /**
      * Returns the popup title.
+     *
+     * @return a {@link java.lang.String} object
      */
     public String getTitle() { return title; }
 
     /**
      * Returns whether popup is resizable.
+     *
+     * @return a boolean
      */
     public boolean isResizable() { return resizable; }
 
     /**
      * Returns whether popup is modal.
+     *
+     * @return a boolean
      */
     public boolean isModal() { return modal; }
 
     /**
      * Returns whether to wait for popup close.
+     *
+     * @return a boolean
      */
     public boolean isWaitForClose() { return waitForClose; }
 
     /**
      * Returns the popup width.
+     *
+     * @return a double
      */
     public double getWidth() { return width; }
 
     /**
      * Returns the popup height.
+     *
+     * @return a double
      */
     public double getHeight() { return height; }
 
     /**
      * Returns the popup icon.
+     *
+     * @return a {@link javafx.scene.image.Image} object
      */
     public Image getIcon() { return icon; }
 
     /**
      * Sets the controller configurator function.
+     *
+     * @param configurator a {@link java.util.function.Consumer} object
+     * @return a {@link org.frost.helpers.PopupConfig} object
      */
     public PopupConfig setControllerConfigurator(Consumer<Object> configurator) {
         this.controllerConfigurator = configurator;

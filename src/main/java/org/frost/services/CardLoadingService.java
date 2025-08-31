@@ -45,8 +45,8 @@ public class CardLoadingService {
      * @param logicalName logical name for error reporting and logging
      * @param stage the stage for scene validation (must not be null)
      * @return the controller instance of the loaded card
-     * @throws IllegalArgumentException if any parameter is invalid
-     * @throws RuntimeException if FXML loading fails
+     * @throws java.lang.IllegalArgumentException if any parameter is invalid
+     * @throws java.lang.RuntimeException if FXML loading fails
      */
     public <T> T loadCard(AnchorPane targetPanel, String cardFxmlPath,
                           String logicalName, Stage stage) {
@@ -80,8 +80,8 @@ public class CardLoadingService {
      * @param dataSetter callback for injecting data into card controllers (can be null)
      * @param horizontalMargin horizontal spacing between cards in pixels
      * @param verticalMargin vertical spacing between cards in pixels
-     * @throws IllegalArgumentException if container, items, or cardFxmlPath are invalid
-     * @throws RuntimeException if FXML loading fails
+     * @throws java.lang.IllegalArgumentException if container, items, or cardFxmlPath are invalid
+     * @throws java.lang.RuntimeException if FXML loading fails
      */
     public <T> void loadCards(Pane container, List<T> items, String cardFxmlPath,
                               BiConsumer<Object, T> dataSetter,
@@ -138,8 +138,8 @@ public class CardLoadingService {
      * @param horizontalMargin horizontal spacing between cards in pixels
      * @param verticalMargin vertical spacing between cards in pixels
      * @return a list of card controller instances (never null)
-     * @throws IllegalArgumentException if container, items, or cardFxmlPath are invalid
-     * @throws RuntimeException if FXML loading fails
+     * @throws java.lang.IllegalArgumentException if container, items, or cardFxmlPath are invalid
+     * @throws java.lang.RuntimeException if FXML loading fails
      */
     public <T, C> List<C> loadCardsWithControllers(Pane container, List<T> items, String cardFxmlPath,
                                                    BiConsumer<C, T> dataSetter,
@@ -199,8 +199,8 @@ public class CardLoadingService {
      * @param cardFxmlPath the FXML path for the card template (must not be null or empty)
      * @param dataSetter callback for injecting data into the card controller (can be null)
      * @return the controller instance of the newly added card
-     * @throws IllegalArgumentException if container, item, or cardFxmlPath are invalid
-     * @throws RuntimeException if FXML loading fails
+     * @throws java.lang.IllegalArgumentException if container, item, or cardFxmlPath are invalid
+     * @throws java.lang.RuntimeException if FXML loading fails
      */
     public <T, C> C addCardToContainer(Pane container, T item, String cardFxmlPath,
                                        BiConsumer<C, T> dataSetter) {

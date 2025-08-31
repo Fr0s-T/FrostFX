@@ -47,6 +47,12 @@ public class StageManager {
     private final Map<Stage, WindowMode> stageWindowModes = new HashMap<>();
     private final Map<String, String> stageTitles = new HashMap<>();
 
+    /**
+     * <p>setStageTitle.</p>
+     *
+     * @param stageName a {@link java.lang.String} object
+     * @param title a {@link java.lang.String} object
+     */
     public void setStageTitle(String stageName, String title) {
         Stage stage = secondaryStagesMap.get(stageName);
         if (stage != null) {
@@ -55,6 +61,12 @@ public class StageManager {
         }
     }
 
+    /**
+     * <p>getStageTitle.</p>
+     *
+     * @param stageName a {@link java.lang.String} object
+     * @return a {@link java.lang.String} object
+     */
     public String getStageTitle(String stageName) {
         return stageTitles.get(stageName);
     }
@@ -88,13 +100,11 @@ public class StageManager {
      *
      * @return {@code true} if the primary stage has been set via {@link #setPrimaryStage(Stage)},
      *         {@code false} if the stage is null or uninitialized
-     *
      * @see #setPrimaryStage(Stage)
      * @see #getPrimaryStage()
      *
      * <b>apiNote</b> This method is thread-safe for read operations but should be used
      *          in conjunction with proper initialization sequencing
-     *
      * @since 2.0
      */
     public boolean isPrimaryStageSet() {
@@ -111,7 +121,7 @@ public class StageManager {
      * Call this once in your Main.start() method
      *
      * @param stage The primary JavaFX stage (cannot be null)
-     * @throws IllegalArgumentException if stage is null
+     * @throws java.lang.IllegalArgumentException if stage is null
      */
     public void setPrimaryStage(Stage stage) {
         if (stage == null) {
@@ -126,8 +136,8 @@ public class StageManager {
      *
      * @param stageName Unique name for the stage (cannot be blank)
      * @param newStage The stage to register (cannot be null)
-     * @throws IllegalArgumentException if stageName is blank or newStage is null
-     * @throws IllegalStateException if stage name is already registered
+     * @throws java.lang.IllegalArgumentException if stageName is blank or newStage is null
+     * @throws java.lang.IllegalStateException if stage name is already registered
      */
     public void registerSecondaryStage(String stageName, Stage newStage) {
         if (stageName == null || stageName.isBlank()) {
@@ -164,7 +174,7 @@ public class StageManager {
      * Gets the primary application stage
      *
      * @return The primary stage
-     * @throws IllegalStateException if primary stage has not been set
+     * @throws java.lang.IllegalStateException if primary stage has not been set
      */
     public Stage getPrimaryStage() {
         if (primaryStage == null) {
@@ -216,7 +226,7 @@ public class StageManager {
      *
      * @param stage The stage to configure
      * @param mode The window mode to apply
-     * @throws IllegalArgumentException if stage or mode is null
+     * @throws java.lang.IllegalArgumentException if stage or mode is null
      */
     public void applyWindowModeToStage(Stage stage, WindowMode mode) {
         if (stage == null) {
@@ -241,7 +251,7 @@ public class StageManager {
      * Applies a window mode to the primary stage
      *
      * @param mode The window mode to apply
-     * @throws IllegalStateException if primary stage has not been set
+     * @throws java.lang.IllegalStateException if primary stage has not been set
      */
     public void applyWindowMode(WindowMode mode) {
         if (primaryStage == null) {
@@ -254,7 +264,7 @@ public class StageManager {
      * Gets the current window mode of the primary stage
      *
      * @return The current window mode
-     * @throws IllegalStateException if primary stage has not been set
+     * @throws java.lang.IllegalStateException if primary stage has not been set
      */
     public WindowMode getCurrentWindowMode() {
         if (primaryStage == null) {

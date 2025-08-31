@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
  * stages and containers, providing thread-safe loading operations and comprehensive
  * state management.
  *</p>
+ *
  * @see CardLoadingService
  */
 public class CardLoader {
@@ -59,7 +60,7 @@ public class CardLoader {
      * Returns a set of all panel names registered for the primary stage.
      *
      * @return a set of available panel names
-     * @throws IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
      */
     public Set<String> getAvailablePanels() {
         ensurePrimaryStageSet();
@@ -71,7 +72,7 @@ public class CardLoader {
      *
      * @param stage the stage to query for panels
      * @return a set of available panel names for the given stage
-     * @throws IllegalArgumentException if the stage parameter is null
+     * @throws java.lang.IllegalArgumentException if the stage parameter is null
      */
     public Set<String> getAvailablePanels(Stage stage) {
         if (stage == null) throw new IllegalArgumentException("Stage cannot be null");
@@ -93,7 +94,7 @@ public class CardLoader {
      *
      * @param stage the stage to query for containers
      * @return a set of available container names for the given stage
-     * @throws IllegalArgumentException if the stage parameter is null
+     * @throws java.lang.IllegalArgumentException if the stage parameter is null
      */
     public Set<String> getAvailableContainers(Stage stage) {
         if (stage == null) throw new IllegalArgumentException("Stage cannot be null");
@@ -107,8 +108,8 @@ public class CardLoader {
      *
      * @param name the unique name to identify the card
      * @param fxmlPath the classpath path to the FXML file defining the card's UI
-     * @throws IllegalArgumentException if name or fxmlPath are null or blank
-     * @throws IllegalStateException if a card with the same name is already registered
+     * @throws java.lang.IllegalArgumentException if name or fxmlPath are null or blank
+     * @throws java.lang.IllegalStateException if a card with the same name is already registered
      */
     public void registerCard(String name, String fxmlPath) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Card name must not be null or blank");
@@ -132,7 +133,7 @@ public class CardLoader {
      *
      * @param name the unique name to identify the panel
      * @param panel the AnchorPane instance to register
-     * @throws IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
      */
     public void registerDynamicPanel(String name, AnchorPane panel) {
         ensurePrimaryStageSet();
@@ -144,7 +145,7 @@ public class CardLoader {
      *
      * @param name the unique name to identify the container
      * @param container the Pane instance to register
-     * @throws IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
      */
     public void registerContainer(String name, Pane container) {
         ensurePrimaryStageSet();
@@ -157,7 +158,7 @@ public class CardLoader {
      * @param name the unique name to identify the panel
      * @param panel the AnchorPane instance to register
      * @param stage the stage to associate with the panel
-     * @throws IllegalArgumentException if any parameter is null or name is blank
+     * @throws java.lang.IllegalArgumentException if any parameter is null or name is blank
      */
     public void registerDynamicPanel(String name, AnchorPane panel, Stage stage) {
         validateRegistrationParams(name, panel, stage);
@@ -170,7 +171,7 @@ public class CardLoader {
      * @param name the unique name to identify the container
      * @param container the Pane instance to register
      * @param stage the stage to associate with the container
-     * @throws IllegalArgumentException if any parameter is null or name is blank
+     * @throws java.lang.IllegalArgumentException if any parameter is null or name is blank
      */
     public void registerContainer(String name, Pane container, Stage stage) {
         validateRegistrationParams(name, container, stage);
@@ -210,8 +211,8 @@ public class CardLoader {
      * @param cardName the registered name of the card to load
      * @param anchorPaneName the name of the panel where the card should be placed
      * @return the controller instance of the loaded card
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> T loadCard(String cardName, String anchorPaneName) {
         ensurePrimaryStageSet();
@@ -226,7 +227,7 @@ public class CardLoader {
      * @param anchorPaneName the name of the panel where the card should be placed
      * @param stage the stage containing the target panel
      * @return the controller instance of the loaded card
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> T loadCard(String cardName, String anchorPaneName, Stage stage) {
         String cardFxmlPath = getCardPath(cardName);
@@ -246,8 +247,8 @@ public class CardLoader {
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
      * @param cardName the registered name of the card to load
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName) {
         ensurePrimaryStageSet();
@@ -278,8 +279,8 @@ public class CardLoader {
      * @param items the list of data items to display (one card per item)
      * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter) {
@@ -310,15 +311,14 @@ public class CardLoader {
      * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
-     *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
      * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, double margin) {
@@ -344,13 +344,11 @@ public class CardLoader {
      * the developer's data list to rebuild the UI. If the new item is not in that
      * list, it will not appear after a refresh.
      *</p>
+     *
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      * Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      * Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
      * Target vertical spacers: .frostfx-spacer:vertical { /* styles }
-     *
-     *
-     *
      * @param <T> the type of data items
      * @param containerName the name of the container to populate with cards
      * @param items the list of data items to display (one card per item)
@@ -358,9 +356,8 @@ public class CardLoader {
      * @param dataSetter a function that binds data items to their card controllers
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter,
@@ -401,8 +398,7 @@ public class CardLoader {
      * @param stage the stage containing the target container
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T> void loadCards(String containerName, List<T> items, String cardName,
                               BiConsumer<Object, T> dataSetter, Stage stage,
@@ -426,8 +422,8 @@ public class CardLoader {
      * @param cardName the registered name of the card to load
      * @param dataSetter a function that binds data items to their card controllers
      * @return a list of card controller instances
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T, C> List<C> loadCardsWithControllers(String containerName, List<T> items, String cardName,
                                                    BiConsumer<C, T> dataSetter) {
@@ -447,9 +443,8 @@ public class CardLoader {
      * @param dataSetter a function that binds data items to their card controllers
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
      * @return a list of card controller instances
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
@@ -474,9 +469,8 @@ public class CardLoader {
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
      * @return a list of card controller instances
-     * @throws IllegalStateException if the primary stage has not been set
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalStateException if the primary stage has not been set
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
@@ -501,8 +495,7 @@ public class CardLoader {
      * @param dataSetter a function that binds data items to their card controllers
      * @param stage the stage containing the target container
      * @return a list of card controller instances
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
@@ -526,8 +519,7 @@ public class CardLoader {
      * @param stage the stage containing the target container
      * @param margin the uniform margin (applied to both horizontal and vertical spacing)
      * @return a list of card controller instances
-     * @throws IllegalArgumentException if the card is not registered
-     *
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
@@ -553,9 +545,7 @@ public class CardLoader {
      * @param horizontalMargin the horizontal spacing between cards
      * @param verticalMargin the vertical spacing between cards
      * @return a list of card controller instances
-     * @throws IllegalArgumentException if the card is not registered
-     *
-     *
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
      *       Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
      *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
@@ -595,6 +585,7 @@ public class CardLoader {
      * the developer's data list to rebuild the UI. If the new item is not in that
      * list, it will not appear after a refresh.
      *</p>
+     *
      * @param <T>           the type of data items
      * @param <C>           the type of card controllers
      * @param containerName the name of the target container
@@ -602,7 +593,7 @@ public class CardLoader {
      * @param cardName      the name of the card used in the registry
      * @param dataSetter    callback for injecting data into the card controller
      * @param stage         the stage containing the container
-     * @throws IllegalArgumentException if the container or card is not registered
+     * @throws java.lang.IllegalArgumentException if the container or card is not registered
      */
     public <T, C> void addCardToContainer(String containerName, T item, String cardName,
                                           BiConsumer<C, T> dataSetter, Stage stage) {
@@ -624,7 +615,7 @@ public class CardLoader {
      * @param dataSetter    a function that binds data items to their card controllers
      * @param stage         the stage containing the target container
      * @return              the controller instance of the newly added card
-     * @throws IllegalArgumentException if the card is not registered
+     * @throws java.lang.IllegalArgumentException if the card is not registered
      */
     public <T, C> C addCardToContainerWithController(String containerName, T item, String cardName,
                                                      BiConsumer<C, T> dataSetter, Stage stage) {
@@ -789,6 +780,7 @@ public class CardLoader {
      *<p>
      * NOTE: This preserves card path registrations since cards are reusable across stages
      *</p>
+     *
      * @see #clearAll() for complete cleanup including card definitions
      */
     public void clearAllRegistrations() {

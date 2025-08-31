@@ -13,6 +13,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.frost.internal.loaders.SceneManager.runOnFxThread;
 
+/**
+ * <p>SceneLoader class.</p>
+ *
+ */
 public class SceneLoader {
 
     private Stage primaryStage;
@@ -36,6 +40,9 @@ public class SceneLoader {
         void onAfterSceneLoad(String fxmlPath, Object controller);
     }
 
+    /**
+     * <p>Constructor for SceneLoader.</p>
+     */
     public SceneLoader() { }
 
     void setPrimaryStage(Stage stage) { this.primaryStage = stage; }
@@ -46,7 +53,6 @@ public class SceneLoader {
      *
      * @param listener Implementation of FrameLoaderListener
      */
-
     public void addSceneLoaderListener(FrameLoaderListener listener) {
         sceneListeners.add(listener);
     }
@@ -67,7 +73,7 @@ public class SceneLoader {
      *
      * @param fxmlPath   Classpath path to the scene FXML
      * @param controller Optional custom controller (null for FXML-defined)
-     * @throws RuntimeException throws RTE if the fxml class fails to load
+     * @throws java.lang.RuntimeException throws RTE if the fxml class fails to load
      */
     public void loadScene(String fxmlPath, Object controller){
         loadScene(fxmlPath, controller, primaryStage);
@@ -81,7 +87,7 @@ public class SceneLoader {
      * @param fxmlPath   Classpath path to the scene FXML
      * @param controller Optional custom controller (null for FXML-defined)
      * @param stage      The stage to load the scene into
-     * @throws RuntimeException throws RTE if the fxml class fails to load
+     * @throws java.lang.RuntimeException throws RTE if the fxml class fails to load
      */
     public void loadScene(String fxmlPath, Object controller, Stage stage) {
         runOnFxThread(() -> {
@@ -127,7 +133,7 @@ public class SceneLoader {
      * @param controller Optional custom controller (null for FXML-defined)
      * @param <T>        The type of the controller
      * @return a CompletableFuture that will hold the controller once loading is complete
-     * @throws RuntimeException throws RTE if the fxml class fails to load
+     * @throws java.lang.RuntimeException throws RTE if the fxml class fails to load
      */
     public <T> CompletableFuture<T> loadSceneAsync(String fxmlPath, Object controller) {
         ensurePrimaryStageSet();

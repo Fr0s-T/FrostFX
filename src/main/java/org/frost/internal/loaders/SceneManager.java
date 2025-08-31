@@ -75,8 +75,8 @@ public final class SceneManager {
      * Must be called before any other framework operations.
      *
      * @param primaryStage the primary JavaFX stage from Application.start()
-     * @throws IllegalArgumentException if primaryStage is null
-     * @throws IllegalStateException if already initialized (use reset() first)
+     * @throws java.lang.IllegalArgumentException if primaryStage is null
+     * @throws java.lang.IllegalStateException if already initialized (use reset() first)
      */
     public static void init(Stage primaryStage) {
         if (primaryStage == null) {
@@ -97,7 +97,7 @@ public final class SceneManager {
      * Sets the global window display mode for new stages.
      *
      * @param newWindowMode the window mode to apply
-     * @throws IllegalArgumentException if newWindowMode is null
+     * @throws java.lang.IllegalArgumentException if newWindowMode is null
      */
     public static void setWindowMode(WindowMode newWindowMode) {
         if (newWindowMode == null) throw new IllegalArgumentException("WindowMode cannot be null");
@@ -151,8 +151,7 @@ public final class SceneManager {
      * Useful for application mode changes, theme switches, or reinitialization.
      *
      * @param options configuration specifying what components to reset
-     * @throws IllegalArgumentException if options is null
-     *
+     * @throws java.lang.IllegalArgumentException if options is null
      * @see ResetOptions
      */
     public static void reset(ResetOptions options) {
