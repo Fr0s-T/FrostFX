@@ -7,9 +7,12 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import java.util.function.BiConsumer;
 
 import static org.frost.internal.loaders.SceneManager.runOnFxThread;
 
@@ -22,10 +25,10 @@ public class SceneLoader {
     private Stage primaryStage;
 
     /** List of scene lifecycle listeners for hooks */
-    private static final List<FrameLoaderListener> sceneListeners = new ArrayList<>();
+    private static final List<SceneLoaderListener> sceneListeners = new CopyOnWriteArrayList<>();
 
 
-    public interface FrameLoaderListener {
+    public interface SceneLoaderListener {
         /** Called immediately before a scene begins loading
          *
          *
@@ -51,9 +54,9 @@ public class SceneLoader {
      * Registers a lifecycle listener for scene loading events
      * Perfect for analytics, permissions, preloading, etc.
      *
-     * @param listener Implementation of FrameLoaderListener
+     * @param listener Implementation of SceneLoaderListener
      */
-    public void addSceneLoaderListener(FrameLoaderListener listener) {
+    public void addSceneLoaderListener(SceneLoaderListener listener) {
         sceneListeners.add(listener);
     }
 
@@ -62,7 +65,7 @@ public class SceneLoader {
      *
      * @param listener the listener you want to remove
      */
-    public void removeSceneLoaderListener(FrameLoaderListener listener) {
+    public void removeSceneLoaderListener(SceneLoaderListener listener) {
         sceneListeners.remove(listener);
     }
 
@@ -140,6 +143,7 @@ public class SceneLoader {
         return loadSceneAsync(fxmlPath, controller, primaryStage);
     }
 
+
     /**
      * Loads a complete scene into a stage and returns a Future for its controller.
      * Use when you need a reference to the controller after loading.
@@ -173,6 +177,7 @@ public class SceneLoader {
                 T loadedController = (T) loader.getController();
 
                 Scene scene = new Scene(root);
+
                 stage.setScene(scene);
                 stage.centerOnScreen();
                 stage.show();
@@ -188,6 +193,96 @@ public class SceneLoader {
         return future;
     }
 
+    // ===============Create a controller and use it to load a scene===================//
+
+    public <T, C> CompletableFuture<T> createControllerAsync(String fxmlPath, C context,
+                                                             BiConsumer<T, C> preInit) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                URL url = getClass().getResource(fxmlPath);
+                if (url == null) {
+                    future.completeExceptionally(new IllegalArgumentException("FXML not found: " + fxmlPath));
+                    return;
+                }
+
+                FXMLLoader loader = new FXMLLoader(url);
+                Parent root = loader.load();
+
+                @SuppressWarnings("unchecked")
+                T controller = (T) loader.getController();
+
+                // Validate controller isn't null
+                if (controller == null) {
+                    future.completeExceptionally(new IllegalStateException(
+                            "Controller is null. Check FXML fx:controller declaration or custom controller setup"));
+                    return;
+                }
+
+                // Pre-initialization with null-safe checks
+                if (preInit != null) {
+                    try {
+                        preInit.accept(controller, context);
+                    } catch (Exception e) {
+                        future.completeExceptionally(new RuntimeException("Pre-initialization failed", e));
+                        return;
+                    }
+                }
+
+                future.complete(controller);
+
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+
+        return future;
+    }
+
+    /**
+     * Attaches an existing controller to a scene/stage without recreating the controller.
+     * Perfect for when you want to reuse a pre-initialized controller.
+     */
+    public <T> void attachControllerToScene(String fxmlPath, T existingController, Stage stage) {
+        runOnFxThread(() -> {
+            try {
+                URL url = getClass().getResource(fxmlPath);
+                if (url == null) throw new IllegalArgumentException("FXML not found: " + fxmlPath);
+
+                FXMLLoader loader = getFxmlLoader(existingController, url);
+
+                Parent root = loader.load();
+                Scene scene = new Scene(root);
+                stage.setScene(scene);
+                stage.centerOnScreen();
+                stage.show();
+
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to attach controller to scene", e);
+            }
+        });
+    }
+
+    private <T> FXMLLoader getFxmlLoader(T existingController, URL url) {
+        FXMLLoader loader = new FXMLLoader(url);
+
+        // Enhanced controller factory
+        loader.setControllerFactory(param -> {
+            // Return existing controller if types match
+            if (param.isInstance(existingController)) {
+                return existingController;
+            }
+
+            // For other controllers (if any), create new instances
+            try {
+                return param.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create controller: " + param.getName(), e);
+            }
+        });
+        return loader;
+    }
     // =============== HELPER METHODS ===============//
 
     /** Triggers all before-load lifecycle hooks
@@ -195,7 +290,7 @@ public class SceneLoader {
      * @param fxmlPath  the path to seen you want to attach this to
      * */
     private void fireBeforeSceneLoad(String fxmlPath) {
-        for (FrameLoaderListener listener : sceneListeners) {
+        for (SceneLoaderListener listener : sceneListeners) {
             listener.onBeforeSceneLoad(fxmlPath);
         }
     }
@@ -205,7 +300,7 @@ public class SceneLoader {
      * @param fxmlPath the path to seen you want to attach this to
      * */
     private void fireAfterSceneLoad(String fxmlPath, Object controller) {
-        for (FrameLoaderListener listener : sceneListeners) {
+        for (SceneLoaderListener listener : sceneListeners) {
             listener.onAfterSceneLoad(fxmlPath, controller);
         }
     }

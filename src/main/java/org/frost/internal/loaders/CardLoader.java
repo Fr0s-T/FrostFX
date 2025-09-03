@@ -1,12 +1,18 @@
 package org.frost.internal.loaders;
 
+import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import org.frost.Utilities.CardControllersResult;
 import org.frost.services.CardLoadingService;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+
+import static org.frost.internal.loaders.SceneManager.runOnFxThread;
 
 /**
  * The main entry point for loading and managing dynamic, reusable UI components ("cards") in the FrostFX framework.
@@ -642,8 +648,81 @@ public class CardLoader {
         return loadingService.addCardToContainer(container, item, cardFxmlPath, dataSetter);
     }
 
+    //====================create a card controller in bulk and re-attach said controller to the scene================//
 
-    // ==================== INTERNAL HELPERS ====================
+    /**
+     * 🚨 ADVANCED USAGE ONLY! 🚨
+     * Creates card controllers without attaching them to UI for manual lifecycle management.
+     *
+     * WARNING: This method returns live JavaFX components that MUST be properly managed.
+     * Incorrect usage will cause memory leaks and application instability.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param cardName the registered card name (must exist in registry)
+     * @param items the data items to bind to controllers
+     * @param dataSetter callback for initial data binding
+     * @return CardControllersResult containing controllers and their root nodes
+     * @throws IllegalStateException if called from non-JavaFX thread
+     * @throws IllegalArgumentException if card is not registered
+     */
+    public <T, C> CompletableFuture<CardControllersResult<T, C>> createCardControllersAsync(
+            String cardName, List<T> items, BiConsumer<C, T> dataSetter) {
+
+        CompletableFuture<CardControllersResult<T, C>> future = new CompletableFuture<>();
+
+        runOnFxThread(() -> {
+            try {
+                CardControllersResult<T, C> result = loadingService.createCardControllers(items,getCardPath(cardName),
+                        dataSetter);
+                future.complete(result);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+
+        return future;
+    }
+
+    /**
+     * 🚨 ADVANCED USAGE ONLY! 🚨
+     * Attaches pre-created card controllers to a registered container.
+     *
+     * WARNING: The controllersResult MUST come from createCardControllers() with the same
+     * card name and compatible data types. Size mismatches will cause exceptions.
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param containerName the target container name (must be registered)
+     * @param items the current data items for binding (size must match controllersResult)
+     * @param controllersResult the pre-created controllers from createCardControllers()
+     * @param dataSetter callback for data updates during attachment (can be null)
+     * @param stage the stage containing the container
+     * @throws IllegalStateException if called from non-JavaFX thread
+     * @throws IllegalArgumentException if sizes mismatch or container not found
+     *
+     */
+    public <T, C> CompletableFuture<Void> attachCardControllersAsync(
+            String containerName, List<T> items, CardControllersResult<T, C> controllersResult,
+            BiConsumer<C, T> dataSetter, Stage stage, double horizontalMargin, double verticalMargin) {
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        runOnFxThread(() -> {
+            try {
+                loadingService.attachCardControllers(getContainerFromRegistry(containerName,stage),items
+                        ,controllersResult,dataSetter,horizontalMargin,verticalMargin);
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+
+        return future;
+    }
+
+
+    // ==================== INTERNAL HELPERS ====================//
 
     /**
      * Validates parameters for registration methods.
@@ -676,7 +755,7 @@ public class CardLoader {
     /**
      * Gets a container from the registry by name and stage.
      */
-    private Pane getContainerFromRegistry(String containerName, Stage stage) {
+    public Pane getContainerFromRegistry(String containerName, Stage stage) {
         Map<String, Pane> containers = stageContainers.get(stage);
         if (containers == null || !containers.containsKey(containerName)) {
             throw new IllegalArgumentException("Container '" + containerName + "' not registered for stage");

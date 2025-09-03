@@ -7,6 +7,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
+import org.frost.Utilities.CardControllersResult;
 import org.frost.internal.loaders.SceneManager;
 
 import java.io.IOException;
@@ -346,6 +347,142 @@ public class CardLoadingService {
         });
 
         return controllers;
+    }
+
+    /**
+     * <p>Creates card controllers and their root nodes without attaching to UI.</p>
+     *
+     * <p><b>Internal Use Only:</b> This method is for advanced controller lifecycle management
+     * and requires careful handling of the returned components.</p>
+     *
+     * <p><b>Order Preservation:</b> The returned lists maintain strict positional correspondence.
+     * controller.get(0) corresponds to nodes.get(0) and initialData.get(0).</p>
+     *
+     * <p><b>Memory Warning:</b> Both controllers and nodes are fully initialized JavaFX components
+     * that must be properly managed to prevent memory leaks.</p>
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param items the data items to bind to controllers (cannot be null)
+     * @param cardFxmlPath the FXML resource path (cannot be null or empty)
+     * @param dataSetter optional data binding function (can be null)
+     * @return CardControllersResult containing ordered controllers, nodes, and initial data
+     * @throws IOException if FXML loading fails
+     * @throws IllegalArgumentException if items or cardFxmlPath are invalid
+     * @throws RuntimeException if controller instantiation fails
+     */
+    public <T, C> CardControllersResult<T, C> createCardControllers(List<T> items, String cardFxmlPath,
+                                                                    BiConsumer<C, T> dataSetter) throws IOException {
+        if (items == null) {
+            throw new IllegalArgumentException("Items list cannot be null");
+        }
+        if (cardFxmlPath == null || cardFxmlPath.isBlank()) {
+            throw new IllegalArgumentException("Card FXML path cannot be null or empty");
+        }
+
+        List<C> controllers = new ArrayList<>(items.size());
+        List<Node> nodes = new ArrayList<>(items.size());
+
+        for (T item : items) {
+            URL resourceUrl = SceneManager.class.getResource(cardFxmlPath);
+            if (resourceUrl == null) {
+                throw new IOException("FXML resource not found: " + cardFxmlPath);
+            }
+
+            FXMLLoader loader = new FXMLLoader(resourceUrl);
+            Node cardNode = loader.load();
+
+            @SuppressWarnings("unchecked")
+            C controller = (C) loader.getController();
+
+            if (controller == null) {
+                throw new RuntimeException("FXML controller is null for: " + cardFxmlPath);
+            }
+
+            if (dataSetter != null) {
+                try {
+                    dataSetter.accept(controller, item);
+                } catch (Exception e) {
+                    throw new RuntimeException("Data setter failed for item: " + item, e);
+                }
+            }
+
+            controllers.add(controller);
+            nodes.add(cardNode);
+        }
+
+        return new CardControllersResult<>(controllers, nodes, items);
+    }
+
+    /**
+     * <p>Attaches pre-created card controllers to a container.</p>
+     *
+     * <p><b>Internal Use Only:</b> This method requires properly ordered components
+     * from createCardControllers(). Incorrect usage will cause UI inconsistencies.</p>
+     *
+     * <p><b>Order Critical:</b> The items list must match the order used during controller
+     * creation. Positional mismatches will cause data binding errors.</p>
+     *
+     * <p><b>Thread Safety:</b> This method must be called on the JavaFX Application Thread.
+     * The runOnFxThread wrapper ensures proper thread access.</p>
+     *
+     * @param <T> the type of data items
+     * @param <C> the type of card controllers
+     * @param container the target container (cannot be null)
+     * @param items the data items for current binding (cannot be null, must match creation order)
+     * @param controllersResult the pre-created controllers and nodes (cannot be null)
+     * @param dataSetter optional data update function (can be null for no updates)
+     * @param horizontalMargin horizontal spacing between cards
+     * @param verticalMargin vertical spacing between cards
+     * @throws IllegalArgumentException if parameters are invalid or sizes mismatch
+     */
+    public <T, C> void attachCardControllers(Pane container, List<T> items,
+                                             CardControllersResult<T, C> controllersResult,
+                                             BiConsumer<C, T> dataSetter,
+                                             double horizontalMargin, double verticalMargin) {
+        if (container == null) {
+            throw new IllegalArgumentException("Container cannot be null");
+        }
+        if (items == null) {
+            throw new IllegalArgumentException("Items list cannot be null");
+        }
+        if (controllersResult == null) {
+            throw new IllegalArgumentException("Controllers result cannot be null");
+        }
+        if (items.size() != controllersResult.size()) {
+            throw new IllegalArgumentException(
+                    "Items size (" + items.size() + ") must match controllers size (" + controllersResult.size() + ")");
+        }
+
+        runOnFxThread(() -> {
+            container.getChildren().clear();
+
+            List<C> controllers = controllersResult.getControllers();
+            List<Node> nodes = controllersResult.getNodes();
+
+            for (int i = 0; i < items.size(); i++) {
+                T item = items.get(i);
+                C controller = controllers.get(i);
+                Node cardNode = nodes.get(i);
+
+                // Update data binding if provided
+                if (dataSetter != null) {
+                    try {
+                        dataSetter.accept(controller, item);
+                    } catch (Exception e) {
+                        System.err.println("Data setter failed for item at index " + i + ": " + item);
+                        e.printStackTrace();
+                        // Continue with other items rather than failing completely
+                    }
+                }
+
+                container.getChildren().add(cardNode);
+
+                if (i < items.size() - 1) {
+                    addMarginSpacers(container, horizontalMargin, verticalMargin);
+                }
+            }
+        });
     }
 
     // ==================== UTILITY METHODS ====================
