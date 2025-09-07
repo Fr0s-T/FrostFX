@@ -651,20 +651,52 @@ public class CardLoader {
     //====================create a card controller in bulk and re-attach said controller to the scene================//
 
     /**
-     * 🚨 ADVANCED USAGE ONLY! 🚨
-     * Creates card controllers without attaching them to UI for manual lifecycle management.
+     * <h1>ADVANCED USAGE ONLY!</h1>
+     *<p>
+     * Asynchronously creates card controllers and their corresponding UI nodes,
+     * but does not attach them to the scene graph. This allows for preloading
+     * components off the main UI thread for later atomic reattachment.
+     *</p>
+     * <p>WARNING: The returned {@link CardControllersResult} contains live JavaFX
+     * controllers and nodes. Incorrect lifecycle handling may cause memory leaks,
+     * UI corruption, or application instability.</p>
      *
-     * WARNING: This method returns live JavaFX components that MUST be properly managed.
-     * Incorrect usage will cause memory leaks and application instability.
+     * <h2>Usage Pattern:</h2>
+     * <pre>{@code
+     * cardLoader.createCardControllersAsync("stock-card", stocks, (controller, stock) -> {
+     *     controller.setSymbol(stock.getSymbol());
+     *     controller.setPrice(stock.getPrice());
+     * }).thenCompose(controllersResult -> {
+     *     return cardLoader.attachCardControllersAsync("main-container",
+     *         stocks, controllersResult, null, primaryStage, 10, 10);
+     * }).exceptionally(ex -> {
+     *     logger.error("Atomic composition failed", ex);
+     *     return null;
+     * });
+     * }</pre>
+     *
+     * <h2>Architectural Constraints:</h2>
+     * <ul>
+     *   <li><b>Thread Safety:</b> Can be called from any thread, but all FX work executes on the JavaFX Application Thread.</li>
+     *   <li><b>Lifecycle Management:</b> Callers must maintain strong references to the controllers until disposed.</li>
+     *   <li><b>Memory Ownership:</b> Controllers/nodes must be explicitly cleared if no longer used.</li>
+     * </ul>
+     *
+     * <h2>Common Failure Modes:</h2>q
+     * <ul>
+     *   <li><b>Memory Leaks:</b> Forgetting to clear unused controllers/nodes.</li>
+     *   <li><b>UI Corruption:</b> Binding controllers to mismatched data types or using wrong card name.</li>
+     *   <li><b>Thread Violations:</b> Calling methods directly on FX components off the UI thread.</li>
+     * </ul>
      *
      * @param <T> the type of data items
      * @param <C> the type of card controllers
-     * @param cardName the registered card name (must exist in registry)
-     * @param items the data items to bind to controllers
-     * @param dataSetter callback for initial data binding
-     * @return CardControllersResult containing controllers and their root nodes
-     * @throws IllegalStateException if called from non-JavaFX thread
-     * @throws IllegalArgumentException if card is not registered
+     * @param cardName registered card name (must exist in registry)
+     * @param items data items to bind
+     * @param dataSetter callback for initial binding
+     * @return future containing ordered {@link CardControllersResult}
+     * @throws IllegalStateException if invoked outside FX thread
+     * @throws IllegalArgumentException if card name is not registered
      */
     public <T, C> CompletableFuture<CardControllersResult<T, C>> createCardControllersAsync(
             String cardName, List<T> items, BiConsumer<C, T> dataSetter) {
@@ -685,22 +717,57 @@ public class CardLoader {
     }
 
     /**
-     * 🚨 ADVANCED USAGE ONLY! 🚨
-     * Attaches pre-created card controllers to a registered container.
+     * <h1>ADVANCED USAGE ONLY!</h1>
+     *<p>
+     * Atomically attaches pre-created controllers and nodes to a registered container.
+     * Intended for instant composition of large UI sets (hundreds of nodes) without blocking.
+     *</p>
+     * <p>WARNING: The supplied {@link CardControllersResult} must originate from
+     * {@link #createCardControllersAsync}. Size mismatches or foreign controllers
+     * will cause catastrophic failure.</p>
      *
-     * WARNING: The controllersResult MUST come from createCardControllers() with the same
-     * card name and compatible data types. Size mismatches will cause exceptions.
+     * <h2>Usage Pattern:</h2>
+     * <pre>{@code
+     * cardLoader.attachCardControllersAsync("main-container",
+     *     stocks, controllersResult, null, primaryStage, 10, 10)
+     *   .thenRun(() -> logger.info("Controllers attached"))
+     *   .exceptionally(ex -> {
+     *       logger.error("Failed to attach controllers", ex);
+     *       return null;
+     *   });
+     * }</pre>
      *
-     * @param <T> the type of data items
-     * @param <C> the type of card controllers
-     * @param containerName the target container name (must be registered)
-     * @param items the current data items for binding (size must match controllersResult)
-     * @param controllersResult the pre-created controllers from createCardControllers()
-     * @param dataSetter callback for data updates during attachment (can be null)
-     * @param stage the stage containing the container
-     * @throws IllegalStateException if called from non-JavaFX thread
-     * @throws IllegalArgumentException if sizes mismatch or container not found
+     * <h2>Architectural Constraints:</h2>
+     * <ul>
+     *   <li><b>Atomicity Guarantee:</b> All-or-nothing. Partial success is never committed.</li>
+     *   <li><b>Thread Safety:</b> Executes only on JavaFX Application Thread.</li>
+     *   <li><b>Consistency:</b> Items, controllers, and nodes must be equal-sized and ordered.</li>
+     * </ul>
      *
+     *<h2>Common Failure Modes:</h2>
+     * <ul>
+     *   <li><b>UI Corruption:</b> Items size does not match controllers size.</li>
+     *   <li><b>Thread Starvation:</b> Long-running callbacks inside dataSetter block the FX thread.</li>
+     *   <li><b>State Desync:</b> Mutating items after attachment starts.</li>
+     * </ul>
+     *
+     * @param <T> type of data items
+     * @param <C> type of card controllers
+     * @param containerName registered container name
+     * @param items data items (must match controllersResult size)
+     * @param controllersResult pre-created controllers from {@link #createCardControllersAsync}
+     * @param dataSetter optional callback for updates during attachment
+     * @param stage stage containing target container
+     * @param horizontalMargin applied margin between nodes (x-axis)
+     * @param verticalMargin applied margin between nodes (y-axis)
+     * @return future completing when attachment finishes
+     * @throws IllegalStateException if not on FX thread
+     * @throws IllegalArgumentException if container not found or sizes mismatch
+     *
+     * @CSS .frostfx-spacer The CSS class applied to spacing elements between cards.
+     *      Customize margins using: .frostfx-spacer { -fx-background-color: #e0e0e0; }
+     *      Target horizontal spacers: .frostfx-spacer:horizontal { /*styles }
+     *       Target vertical spacers: .frostfx-spacer:vertical { /* styles  }
      */
     public <T, C> CompletableFuture<Void> attachCardControllersAsync(
             String containerName, List<T> items, CardControllersResult<T, C> controllersResult,

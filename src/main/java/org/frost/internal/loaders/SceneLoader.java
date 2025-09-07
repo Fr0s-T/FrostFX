@@ -195,6 +195,42 @@ public class SceneLoader {
 
     // ===============Create a controller and use it to load a scene===================//
 
+    /**<h1>ADVANCED USAGE ONLY!</h1>
+     * <h2>Asynchronously creates a controller from FXML with optional pre-initialization.</h2>
+     *
+     *<h2>Usage Pattern:</h2>
+     * <pre>{@code
+     * createControllerAsync("/fxml/MyView.fxml", context, (controller, ctx) -> {
+     *     controller.initializeWith(ctx);
+     * }).thenAccept(controller -> {
+     *     // Ready to use controller
+     * }).exceptionally(ex -> {
+     *     logger.error("Failed to load controller", ex);
+     *     return null;
+     * });
+     * }</pre>
+     *
+     *<h2>Architectural Constraints:</h2>
+     * <ul>
+     *   <li><b>Threading:</b> Runs FXML loading on background thread, but controller
+     *       callbacks must remain thread-safe.</li>
+     *   <li><b>PreInit Contract:</b> If preInit fails, the entire operation fails.</li>
+     * </ul>
+     *
+     * <h2>Common Failure Modes:</h2>
+     * <ul>
+     *   <li><b>Missing FXML:</b> Wrong path results in exception.</li>
+     *   <li><b>Null Controller:</b> FXML missing `fx:controller` declaration.</li>
+     *   <li><b>Unsafe PreInit:</b> Exceptions inside preInit block controller creation.</li>
+     * </ul>
+     *
+     * @param <T> controller type
+     * @param <C> context type
+     * @param fxmlPath path to FXML resource
+     * @param context optional context for initialization
+     * @param preInit optional callback invoked before return
+     * @return future completing with initialized controller
+     */
     public <T, C> CompletableFuture<T> createControllerAsync(String fxmlPath, C context,
                                                              BiConsumer<T, C> preInit) {
         CompletableFuture<T> future = new CompletableFuture<>();
@@ -241,8 +277,34 @@ public class SceneLoader {
     }
 
     /**
-     * Attaches an existing controller to a scene/stage without recreating the controller.
-     * Perfect for when you want to reuse a pre-initialized controller.
+     * <h1>ADVANCED USAGE ONLY!</h1>
+     *<h2>Attaches an existing, pre-initialized controller to a stage using its FXML.</h2>
+     *
+     * <p>Useful for reusing controllers across stages/scenes without recreating them.</p>
+     *
+     * <h2>Usage Pattern:</h2>
+     * <pre>{@code
+     * MyController controller = ...; // preloaded
+     * attachControllerToScene("/fxml/MyView.fxml", controller, stage);
+     * }</pre>
+     *
+     * <h2>Architectural Constraints:</h2>
+     * <ul>
+     *   <li><b>Controller Reuse:</b> Loader is forced to return provided controller if type matches.</li>
+     *   <li><b>Threading:</b> Must be called from FX thread.</li>
+     * </ul>
+     *
+     * <h2>Common Failure Modes:</h2>
+     * <ul>
+     *   <li><b>FXML Not Found:</b> Invalid path throws exception.</li>
+     *   <li><b>Type Mismatch:</b> Provided controller type differs from FXML `fx:controller`.</li>
+     *   <li><b>Stage Ownership:</b> Replacing scenes detaches previous nodes.</li>
+     * </ul>
+     *
+     * @param <T> type of controller
+     * @param fxmlPath FXML file path
+     * @param existingController pre-initialized controller
+     * @param stage stage to attach scene to
      */
     public <T> void attachControllerToScene(String fxmlPath, T existingController, Stage stage) {
         runOnFxThread(() -> {
